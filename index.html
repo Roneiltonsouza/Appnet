@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Appnet Pro</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --accent: #2563eb;
+            --text: #f8fafc;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        header {
+            background: #111827;
+            padding: 1.2rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #334155;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .btn-main {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-main:hover {
+            background: #3b82f6;
+            transform: translateY(-2px);
+        }
+
+        .container {
+            padding: 2rem 5%;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .app-card {
+            background: var(--card);
+            padding: 1.2rem;
+            border-radius: 16px;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #334155;
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .info b { font-size: 1.1rem; }
+        .info small { color: #94a3b8; display: block; margin-top: 4px; }
+
+        .actions { display: flex; gap: 10px; }
+
+        .btn-opt {
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid #475569;
+            background: transparent;
+            color: white;
+            cursor: pointer;
+        }
+
+        .btn-opt:hover { background: #334155; }
+        .btn-del { border-color: #7f1d1d; color: #ef4444; }
+        .btn-del:hover { background: #450a0a; }
+
+        input[type="file"] { display: none; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div style="font-size: 1.4rem; font-weight: bold;">☁️ Appnet</div>
+    <button class="btn-main" onclick="document.getElementById('apkInput').click()">+ ADICIONAR APK</button>
+</header>
+
+<input type="file" id="apkInput" accept=".apk">
+
+<div class="container" id="appList">
+    </div>
+
+<script>
+    // Configurações e Banco de Dados Local (IndexedDB)
+    const DB_NAME = "AppnetProDB";
+    const API_KEY = "AIzaXS671Suw8veFfGDffh1L8rhc2C6eBWYKy5b";
+    let db;
+
+    const request = indexedDB.open(DB_NAME, 1);
+
+    request.onupgradeneeded = (e) => {
+        db = e.target.result;
+        db.createObjectStore("apks", { keyPath: "name" });
+    };
+
+    request.onsuccess = (e) => {
+        db = e.target.result;
+        renderList();
+    };
+
+    // Lógica para Adicionar APK
+    document.getElementById('apkInput').addEventListener('change', async function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const btn = document.querySelector('.btn-main');
+        const originalText = btn.innerText;
+        btn.innerText = "Processando...";
+        btn.style.opacity = "0.6";
+
+        try {
+            const zip = new JSZip();
+            zip.file(file.name, file);
+            const zipBlob = await zip.generateAsync({
+                type: "blob",
+                compression: "DEFLATE",
+                compressionOptions: { level: 9 }
+            });
+
+            const reader = new FileReader();
+            reader.onload = function() {
+                const tx = db.transaction(["apks"], "readwrite");
+                const store = tx.objectStore("apks");
+                store.put({
+                    name: file.name,
+                    data: reader.result,
+                    size: (file.size / (1024 * 1024)).toFixed(2) + " MB",
+                    addedAt: new Date().toLocaleDateString('pt-BR')
+                });
+                tx.oncomplete = () => {
+                    renderList();
+                    btn.innerText = originalText;
+                    btn.style.opacity = "1";
+                };
+            };
+            reader.readAsDataURL(zipBlob);
+        } catch (err) {
+            alert("Erro ao processar arquivo.");
+            btn.innerText = originalText;
+        }
+    });
+
+    // Listar APKs
+    function renderList() {
+        const list = document.getElementById('appList');
+        list.innerHTML = "";
+        
+        const tx = db.transaction(["apks"], "readonly");
+        const store = tx.objectStore("apks");
+        const req = store.openCursor();
+
+        req.onsuccess = (e) => {
+            const cursor = e.target.result;
+            if (cursor) {
+                const app = cursor.value;
+                const card = document.createElement('div');
+                card.className = 'app-card';
+                card.innerHTML = `
+                    <div class="info">
+                        <b>${app.name}</b>
+                        <small>${app.size} • ${app.addedAt}</small>
+                    </div>
+                    <div class="actions">
+                        <button class="btn-opt" onclick="downloadApp('${app.name}')">Baixar</button>
+                        <button class="btn-opt btn-del" onclick="deleteApp('${app.name}')">Excluir</button>
+                    </div>
+                `;
+                list.appendChild(card);
+                cursor.continue();
+            } else if (list.innerHTML === "") {
+                list.innerHTML = `<p style="text-align:center; color:#64748b; margin-top:50px;">Sua biblioteca está vazia.</p>`;
+            }
+        };
+    }
+
+    // Baixar/Instalar
+    async function downloadApp(name) {
+        const tx = db.transaction(["apks"], "readonly");
+        const store = tx.objectStore("apks");
+        const req = store.get(name);
+
+        req.onsuccess = async () => {
+            const zipBlob = await fetch(req.result.data).then(r => r.blob());
+            const zip = await JSZip.loadAsync(zipBlob);
+            const fileName = Object.keys(zip.files)[0];
+            const apkBlob = await zip.files[fileName].async("blob");
+            
+            const url = URL.createObjectURL(apkBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            a.click();
+            URL.revokeObjectURL(url);
+        };
+    }
+
+    // Excluir
+    function deleteApp(name) {
+        if(confirm("Deseja remover este APK?")) {
+            const tx = db.transaction(["apks"], "readwrite");
+            const store = tx.objectStore("apks");
+            store.delete(name);
+            tx.oncomplete = renderList;
+        }
+    }
+</script>
+</body>
+  </html>

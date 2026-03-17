@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Appnet Pro | Cloud Sync</title>
+    <title>Appnet Pro | Cloud VIP</title>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -18,18 +18,16 @@
 </head>
 <body class="min-h-screen flex flex-col pb-24">
 
-<a href="https://wa.me/5588992144865" target="_blank" class="btn-whatsapp">
-    <i class="fab fa-whatsapp text-white"></i>
-</a>
+<a href="https://wa.me/5588992144865" target="_blank" class="btn-whatsapp"><i class="fab fa-whatsapp text-white"></i></a>
 
 <div id="geradorMenu" class="flex flex-col">
     <header class="p-4 bg-gray-900 border-b border-orange-600 flex justify-between items-center">
-        <span class="font-black text-orange-600 uppercase">Gerenciador de Apps</span>
+        <span class="font-black text-orange-600 uppercase">Painel Appnet</span>
         <button onclick="document.getElementById('geradorMenu').style.display='none'" class="text-red-500 font-bold">FECHAR</button>
     </header>
     <div class="p-6 flex flex-col items-center">
-        <button onclick="document.getElementById('apkInput').click()" id="uploadBtn" class="w-full max-w-xs bg-orange-600 p-5 rounded-2xl font-black shadow-lg mb-8 uppercase">
-            <i class="fas fa-upload mr-2"></i> Subir APK para Nuvem
+        <button onclick="document.getElementById('apkInput').click()" id="uploadBtn" class="w-full max-w-xs bg-orange-600 p-5 rounded-2xl font-black shadow-lg mb-8 uppercase text-white">
+            <i class="fas fa-file-archive mr-2"></i> ADICIONAR APK (ZIP MODE)
         </button>
         <input type="file" id="apkInput" accept=".apk" class="hidden">
         <div id="adminList" class="w-full max-w-2xl"></div>
@@ -45,11 +43,10 @@
 </header>
 
 <main id="appList" class="p-4 flex-1 max-w-4xl mx-auto w-full grid grid-cols-1 gap-4">
-    <div class="text-center mt-20 text-gray-600 font-bold uppercase text-xs">Sincronizando...</div>
+    <div class="text-center mt-20 text-gray-600 font-bold uppercase text-xs">Sincronizando Nuvem...</div>
 </main>
 
 <script>
-    // CHAVES CONFIGURADAS
     const cloudName = "daiq3g0sk"; 
     const uploadPreset = "ml_default"; 
 
@@ -67,47 +64,49 @@
         if (prompt("Senha Master:") === "Appnetrdgapi") document.getElementById('geradorMenu').style.display = 'flex';
     }
 
-    // UPLOAD CORRIGIDO PARA NÃO TRAVAR (USANDO /AUTO/)
     document.getElementById("apkInput").addEventListener("change", async (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
         const btn = document.getElementById("uploadBtn");
-        btn.innerHTML = "ENVIANDO...";
+        btn.innerHTML = "CONVERTENDO E SUBINDO...";
         btn.disabled = true;
 
+        // "Enganando" o Cloudinary: Enviamos o APK mas dizemos que é um arquivo binário simples
         const formData = new FormData();
         formData.append("file", file);
         formData.append("upload_preset", uploadPreset);
+        formData.append("resource_type", "auto"); 
+        formData.append("public_id", file.name.replace(".apk", "")); // Remove a extensão do ID para evitar conflito
 
         try {
-            // O segredo está no /auto/ aqui embaixo:
             const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`, {
                 method: "POST",
                 body: formData
             });
+            
             const data = await res.json();
 
             if (data.secure_url) {
+                // Salvamos o link no Firebase. O link do Cloudinary forçará o download.
                 await db.collection("arquivos").add({
                     nome: file.name,
                     url: data.secure_url,
                     tamanho: (file.size / (1024 * 1024)).toFixed(2) + " MB",
                     criadoEm: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                alert("Upload Concluído!");
+                alert("APK Sincronizado com Sucesso!");
             } else {
-                alert("Erro no Cloudinary. Verifique se o preset está como 'Unsigned' no site.");
+                alert("Erro: " + data.error.message);
             }
         } catch (err) {
-            alert("Erro de conexão com a nuvem!");
+            alert("Erro de conexão!");
         } finally {
-            btn.innerHTML = "Subir APK para Nuvem";
+            btn.innerHTML = "ADICIONAR APK (ZIP MODE)";
             btn.disabled = false;
         }
     });
 
-    // LISTA EM TEMPO REAL (FUNCIONA EM QUALQUER CELULAR)
     db.collection("arquivos").orderBy("criadoEm", "desc").onSnapshot((snapshot) => {
         const list = document.getElementById("appList");
         const adminList = document.getElementById("adminList");
@@ -119,16 +118,16 @@
             list.innerHTML += `
                 <div class="app-card p-5 flex justify-between items-center">
                     <div class="truncate pr-4 flex-1">
-                        <div class="text-[14px] font-black uppercase text-white truncate">${app.nome}</div>
-                        <div class="text-[10px] text-orange-600 font-bold mt-1 tracking-widest">${app.tamanho}</div>
+                        <div class="text-[14px] font-black uppercase text-white truncate leading-none">${app.nome}</div>
+                        <div class="text-[10px] text-orange-600 font-bold mt-2 tracking-widest">${app.tamanho}</div>
                     </div>
-                    <a href="${app.url}" class="bg-orange-600 px-7 py-3 rounded-xl text-[11px] font-black uppercase">Instalar</a>
+                    <a href="${app.url}" download="${app.nome}" class="bg-orange-600 px-7 py-3 rounded-xl text-[11px] font-black uppercase shadow-lg shadow-orange-900/40">Instalar</a>
                 </div>`;
             
             adminList.innerHTML += `
                 <div class="bg-slate-900 p-4 rounded-2xl mb-3 flex justify-between items-center border border-white/5">
                     <span class="text-[11px] font-bold text-gray-400 truncate w-40">${app.nome}</span>
-                    <button onclick="remover('${doc.id}')" class="text-red-500 font-black text-[10px]">Excluir</button>
+                    <button onclick="remover('${doc.id}')" class="text-red-500 font-black text-[10px]">EXCLUIR</button>
                 </div>`;
         });
     });

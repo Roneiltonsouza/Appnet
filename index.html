@@ -11,9 +11,9 @@
     <style>
         :root { --bg: #0b0f1a; --card: #161b2c; --accent: #ff4500; }
         body { background: var(--bg); color: white; font-family: sans-serif; }
-        .app-card { background: var(--card); border: 1px solid #232a3d; border-radius: 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .app-card { background: var(--card); border: 1px solid #232a3d; border-radius: 18px; }
         #geradorMenu { display: none; position: fixed; inset: 0; background: #0b0f1a; z-index: 100; }
-        .btn-whatsapp { position: fixed; bottom: 20px; right: 20px; background: #25d366; width: 60px; height: 60px; border-radius: 50%; display: flex; items-center; justify-content: center; font-size: 30px; box-shadow: 0 0 15px rgba(37, 211, 102, 0.4); z-index: 90; }
+        .btn-whatsapp { position: fixed; bottom: 20px; right: 20px; background: #25d366; width: 60px; height: 60px; border-radius: 50%; display: flex; items-center; justify-content: center; font-size: 30px; z-index: 90; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col pb-24">
@@ -24,62 +24,56 @@
 
 <div id="geradorMenu" class="flex flex-col">
     <header class="p-4 bg-gray-900 border-b border-orange-600 flex justify-between items-center">
-        <span class="font-black text-orange-600 uppercase tracking-widest">Painel Gerador</span>
-        <button onclick="document.getElementById('geradorMenu').style.display='none'" class="text-red-500 font-black text-xs">FECHAR</button>
+        <span class="font-black text-orange-600 uppercase">Gerenciador de Apps</span>
+        <button onclick="document.getElementById('geradorMenu').style.display='none'" class="text-red-500 font-bold">FECHAR</button>
     </header>
     <div class="p-6 flex flex-col items-center">
         <button onclick="document.getElementById('apkInput').click()" id="uploadBtn" class="w-full max-w-xs bg-orange-600 p-5 rounded-2xl font-black shadow-lg mb-8 uppercase">
-            <i class="fas fa-cloud-upload-alt mr-2"></i> Adicionar APK na Nuvem
+            <i class="fas fa-upload mr-2"></i> Subir APK para Nuvem
         </button>
         <input type="file" id="apkInput" accept=".apk" class="hidden">
         <div id="adminList" class="w-full max-w-2xl"></div>
     </div>
 </div>
 
-<header class="bg-gray-900/50 backdrop-blur-md p-5 flex justify-between items-center border-b border-white/5 sticky top-0 z-50">
+<header class="p-5 flex justify-between items-center border-b border-white/5 bg-gray-900/40 sticky top-0 z-50">
     <div class="flex flex-col">
-        <span class="font-black text-orange-600 text-2xl tracking-tighter leading-none">APPNET PRO</span>
-        <span class="text-[9px] text-gray-500 font-bold uppercase tracking-[4px] mt-1">Nuvem Sincronizada</span>
+        <span class="font-black text-orange-600 text-2xl uppercase">APPNET PRO</span>
+        <span class="text-[9px] text-gray-500 font-bold uppercase tracking-[4px]">Cloud Store</span>
     </div>
-    <div class="flex gap-4 items-center">
-        <a href="https://wa.me/5588992144865" class="text-green-500 text-xl"><i class="fab fa-whatsapp"></i></a>
-        <button onclick="solicitarSenha()" class="bg-white/5 p-3 rounded-xl border border-white/10"><i class="fas fa-cog text-gray-400"></i></button>
-    </div>
+    <button onclick="solicitarSenha()" class="bg-white/5 p-3 rounded-xl border border-white/10"><i class="fas fa-cog text-gray-400"></i></button>
 </header>
 
 <main id="appList" class="p-4 flex-1 max-w-4xl mx-auto w-full grid grid-cols-1 gap-4">
-    <div class="text-center mt-20 text-slate-600 animate-pulse font-bold uppercase text-xs">Conectando...</div>
+    <div class="text-center mt-20 text-gray-600 font-bold uppercase text-xs">Sincronizando...</div>
 </main>
 
 <script>
-    // CONFIGURAÇÕES COM SUA CHAVE API ADICIONADA
+    // CHAVES CONFIGURADAS
     const cloudName = "daiq3g0sk"; 
     const uploadPreset = "ml_default"; 
 
     const firebaseConfig = {
-        apiKey: "AIzaLXKFaZONAeHabdqOV3b0VE6ISpPUMvLkNKa", // Sua chave inserida aqui
+        apiKey: "AIzaLXKFaZONAeHabdqOV3b0VE6ISpPUMvLkNKa",
         authDomain: "appnet-pro.firebaseapp.com",
         projectId: "appnet-pro",
         storageBucket: "appnet-pro.appspot.com"
     };
 
-    // Inicialização
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
     function solicitarSenha() {
-        if (prompt("Senha Administrativa:") === "Appnetrdgapi") {
-            document.getElementById('geradorMenu').style.display = 'flex';
-        }
+        if (prompt("Senha Master:") === "Appnetrdgapi") document.getElementById('geradorMenu').style.display = 'flex';
     }
 
-    // UPLOAD PARA CLOUDINARY + SALVAR NO FIREBASE
+    // UPLOAD CORRIGIDO PARA NÃO TRAVAR (USANDO /AUTO/)
     document.getElementById("apkInput").addEventListener("change", async (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
         const btn = document.getElementById("uploadBtn");
-        btn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> ENVIANDO...`;
+        btn.innerHTML = "ENVIANDO...";
         btn.disabled = true;
 
         const formData = new FormData();
@@ -87,34 +81,33 @@
         formData.append("upload_preset", uploadPreset);
 
         try {
-            // Upload direto para o Cloudinary (Velocidade máxima)
-            const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/raw/upload`, {
+            // O segredo está no /auto/ aqui embaixo:
+            const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`, {
                 method: "POST",
                 body: formData
             });
             const data = await res.json();
 
             if (data.secure_url) {
-                // Salva a informação no Firebase para aparecer em todos os aparelhos
                 await db.collection("arquivos").add({
                     nome: file.name,
                     url: data.secure_url,
                     tamanho: (file.size / (1024 * 1024)).toFixed(2) + " MB",
                     criadoEm: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                alert("APK enviado com sucesso!");
+                alert("Upload Concluído!");
             } else {
-                alert("Erro no Cloudinary. Verifique o preset ml_default.");
+                alert("Erro no Cloudinary. Verifique se o preset está como 'Unsigned' no site.");
             }
         } catch (err) {
-            alert("Erro de conexão! Verifique se as regras do Firestore estão abertas.");
+            alert("Erro de conexão com a nuvem!");
         } finally {
-            btn.innerHTML = `<i class="fas fa-cloud-upload-alt mr-2"></i> Adicionar APK na Nuvem`;
+            btn.innerHTML = "Subir APK para Nuvem";
             btn.disabled = false;
         }
     });
 
-    // SINCRONIZAÇÃO EM TEMPO REAL
+    // LISTA EM TEMPO REAL (FUNCIONA EM QUALQUER CELULAR)
     db.collection("arquivos").orderBy("criadoEm", "desc").onSnapshot((snapshot) => {
         const list = document.getElementById("appList");
         const adminList = document.getElementById("adminList");
@@ -126,24 +119,22 @@
             list.innerHTML += `
                 <div class="app-card p-5 flex justify-between items-center">
                     <div class="truncate pr-4 flex-1">
-                        <div class="text-[14px] font-black uppercase text-white truncate leading-tight">${app.nome}</div>
-                        <div class="text-[10px] text-orange-600 font-bold mt-1 tracking-widest">${app.tamanho} • ONLINE</div>
+                        <div class="text-[14px] font-black uppercase text-white truncate">${app.nome}</div>
+                        <div class="text-[10px] text-orange-600 font-bold mt-1 tracking-widest">${app.tamanho}</div>
                     </div>
-                    <a href="${app.url}" class="bg-orange-600 px-7 py-3 rounded-xl text-[11px] font-black uppercase shadow-lg shadow-orange-900/40">Instalar</a>
+                    <a href="${app.url}" class="bg-orange-600 px-7 py-3 rounded-xl text-[11px] font-black uppercase">Instalar</a>
                 </div>`;
             
             adminList.innerHTML += `
-                <div class="bg-slate-900/80 p-4 rounded-2xl mb-3 flex justify-between items-center border border-white/5">
+                <div class="bg-slate-900 p-4 rounded-2xl mb-3 flex justify-between items-center border border-white/5">
                     <span class="text-[11px] font-bold text-gray-400 truncate w-40">${app.nome}</span>
-                    <button onclick="remover('${doc.id}')" class="text-red-500 font-black text-[10px] uppercase">Excluir</button>
+                    <button onclick="remover('${doc.id}')" class="text-red-500 font-black text-[10px]">Excluir</button>
                 </div>`;
         });
     });
 
     async function remover(id) {
-        if (confirm("Deseja apagar este arquivo de todos os dispositivos?")) {
-            await db.collection("arquivos").doc(id).delete();
-        }
+        if (confirm("Apagar da nuvem?")) await db.collection("arquivos").doc(id).delete();
     }
 </script>
 </body>

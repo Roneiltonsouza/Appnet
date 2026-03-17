@@ -13,11 +13,11 @@
         #login-screen { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 1000; flex-direction: column; }
         .login-box { background: var(--card); padding: 30px; border-radius: 20px; border: 1px solid var(--primary); text-align: center; width: 85%; max-width: 350px; box-shadow: 0 0 20px rgba(0,255,136,0.2); }
         
-        .admin-float-btn { position: fixed; bottom: 25px; right: 25px; background: var(--primary); color: #000; width: 55px; height: 55px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: pointer; z-index: 99; box-shadow: 0 4px 15px rgba(0,255,136,0.4); border: none; }
+        .admin-float-btn { position: fixed; bottom: 25px; right: 25px; background: var(--primary); color: #000; width: 55px; height: 55px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: pointer; z-index: 99; border: none; }
 
         .header { padding: 30px 20px; text-align: center; background: var(--card); border-bottom: 2px solid var(--primary); }
         .app-grid { padding: 20px; display: grid; gap: 15px; }
-        .app-card { background: var(--card); padding: 18px; border-radius: 15px; display: flex; align-items: center; justify-content: space-between; border-left: 5px solid var(--primary); transition: 0.3s; }
+        .app-card { background: var(--card); padding: 18px; border-radius: 15px; display: flex; align-items: center; justify-content: space-between; border-left: 5px solid var(--primary); }
         
         input { width: 100%; padding: 14px; margin: 10px 0; border-radius: 10px; border: 1px solid #334155; background: #0b0f1a; color: white; box-sizing: border-box; outline: none; }
         .btn-main { background: var(--primary); color: #000; border: none; padding: 14px; border-radius: 10px; font-weight: bold; cursor: pointer; width: 100%; }
@@ -38,7 +38,7 @@
         <i class="fas fa-cloud-upload-alt" style="font-size: 50px; color: var(--primary); margin-bottom: 15px;"></i>
         <h2 style="margin:0">Appnet Pro</h2>
         <input type="text" id="user-name" placeholder="Seu Nome">
-        <button class="btn-main" onclick="fazerLogin()">ACESSAR SISTEMA</button>
+        <button class="btn-main" onclick="fazerLogin()">ENTRAR</button>
     </div>
 </div>
 
@@ -54,18 +54,18 @@
 <div id="admin-modal" class="modal">
     <div style="width: 100%; max-width: 400px; background: var(--card); padding: 25px; border-radius: 20px; position: relative; border: 1px solid #334155;">
         <span class="close-modal" onclick="fecharPainel()">&times;</span>
-        <h3 style="margin-top:0">Painel Gerador</h3>
+        <h3 style="margin-top:0">Novo Aplicativo</h3>
+        
         <div id="login-api">
             <input type="password" id="api-pass" placeholder="Senha Administrativa">
             <button class="btn-main" onclick="acessarGerador()">LIBERAR PAINEL</button>
         </div>
+
         <div id="upload-area" class="hidden">
-            <input type="text" id="new-app-name" placeholder="Nome do Aplicativo">
-            <input type="text" id="new-app-icon" placeholder="URL da Foto do Ícone">
-            <input type="file" id="new-app-file" accept=".apk">
-            <p style="font-size: 11px; color: #888;">Ou link do Drive:</p>
-            <input type="text" id="new-app-url-drive" placeholder="Link do Google Drive (Opcional)">
-            <button class="btn-main" onclick="uploadNovoApp()">SUBIR PARA NUVEM</button>
+            <input type="text" id="new-app-name" placeholder="Nome do App">
+            <input type="text" id="new-app-icon" placeholder="Link da Foto do Ícone">
+            <input type="text" id="new-app-url" placeholder="Cole o Link Direto aqui">
+            <button class="btn-main" onclick="salvarPorLink()">ADICIONAR NA NUVEM</button>
             <div id="upload-status" style="margin-top: 15px; text-align: center; color: var(--primary); font-weight: bold;"></div>
         </div>
     </div>
@@ -75,6 +75,7 @@
     const SB_URL = "https://xahrzppgkcinpvwvednn.supabase.co";
     const SB_KEY = "sb_publishable_vRzozgRpPpBcDHduo9jYCQ_VE2onFyJ";
     const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
+    const SENHA_MESTRA = "Appnetrdgapi";
     let adminAcesso = false;
 
     function fazerLogin() {
@@ -87,7 +88,7 @@
     function carregarSistema(nome) {
         document.getElementById('login-screen').classList.add('hidden');
         document.getElementById('main-content').classList.remove('hidden');
-        document.getElementById('welcome-msg').innerText = "Bem-vindo, " + nome;
+        document.getElementById('welcome-msg').innerText = "CONECTADO: " + nome.toUpperCase();
         fetchApps();
     }
 
@@ -105,39 +106,15 @@
                             <img src="${foto}" class="app-icon-mini">
                             <div>
                                 <b style="font-size: 16px;">${app.name}</b><br>
-                                <small style="color: #888;">📦 ${app.size || 'Disponível'}</small>
+                                <small style="color: #888;">📦 Cloud Link</small>
                             </div>
                         </div>
                         <div style="display:flex; align-items:center;">
-                            <button class="btn-download" onclick="dispararDownloadZIP('${app.url}', '${app.name}')">BAIXAR</button>
-                            ${adminAcesso ? `<button onclick="deletarApp('${app.id}', '${app.file_path}')" style="background:none; border:none; color:#ff4444; margin-left:10px; cursor:pointer;"><i class="fas fa-trash"></i></button>` : ''}
+                            <button class="btn-download" onclick="window.open('${app.url}', '_blank')">BAIXAR</button>
+                            ${adminAcesso ? `<button onclick="deletarApp('${app.id}')" style="background:none; border:none; color:#ff4444; margin-left:10px; cursor:pointer;"><i class="fas fa-trash"></i></button>` : ''}
                         </div>
                     </div>`;
             });
-        }
-    }
-
-    async function dispararDownloadZIP(url, nomeApp) {
-        try {
-            const btn = event.target;
-            const originalText = btn.innerText;
-            btn.innerText = "PROCESSANDO...";
-            
-            const response = await fetch(url);
-            if(!response.ok) throw new Error();
-            const blob = await response.blob();
-            const blobUrl = window.URL.createObjectURL(blob);
-            
-            const link = document.createElement('a');
-            link.href = blobUrl;
-            link.setAttribute('download', nomeApp.trim() + ".zip");
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            window.URL.revokeObjectURL(blobUrl);
-            btn.innerText = originalText;
-        } catch (e) {
-            window.open(url, '_blank');
         }
     }
 
@@ -145,7 +122,7 @@
     function fecharPainel() { document.getElementById('admin-modal').style.display = 'none'; }
 
     function acessarGerador() {
-        if(document.getElementById('api-pass').value === "Appnetrdgapi") {
+        if(document.getElementById('api-pass').value === SENHA_MESTRA) {
             adminAcesso = true;
             document.getElementById('login-api').classList.add('hidden');
             document.getElementById('upload-area').classList.remove('hidden');
@@ -153,42 +130,33 @@
         } else { alert("Senha Incorreta!"); }
     }
 
-    async function uploadNovoApp() {
+    async function salvarPorLink() {
         const name = document.getElementById('new-app-name').value;
         const icon = document.getElementById('new-app-icon').value;
-        const file = document.getElementById('new-app-file').files[0];
-        const driveUrl = document.getElementById('new-app-url-drive').value;
+        const url = document.getElementById('new-app-url').value;
         const status = document.getElementById('upload-status');
 
-        if(!name) return alert("Dê um nome ao app!");
-        status.innerText = "SUBINDO...";
+        if(!name || !url) return alert("Preencha o nome e o link!");
+        status.innerText = "SALVANDO...";
 
-        let finalUrl = driveUrl;
-        let filePath = "";
-        let size = "LINK DRIVE";
-
-        if(file) {
-            filePath = Date.now() + "_" + file.name;
-            await supabaseClient.storage.from('apks').upload(filePath, file);
-            const { data } = supabaseClient.storage.from('apks').getPublicUrl(filePath);
-            finalUrl = data.publicUrl;
-            size = (file.size/(1024*1024)).toFixed(2) + " MB";
-        }
-
-        await supabaseClient.from('apps').insert([{ 
-            name: name, icon_url: icon, url: finalUrl, file_path: filePath, size: size 
+        const { error } = await supabaseClient.from('apps').insert([{ 
+            name: name, icon_url: icon, url: url, size: "Cloud Link" 
         }]);
 
-        status.innerText = "CONCLUÍDO!";
-        fetchApps();
-        setTimeout(fecharPainel, 1000);
+        if(!error) {
+            status.innerText = "ADICIONADO!";
+            fetchApps();
+            setTimeout(fecharPainel, 800);
+        } else {
+            alert("Erro ao salvar no banco!");
+        }
     }
 
-    async function deletarApp(id, path) {
-        if(!confirm("Excluir App?")) return;
-        await supabaseClient.from('apps').delete().eq('id', id);
-        if(path) await supabaseClient.storage.from('apks').remove([path]);
-        fetchApps();
+    async function deletarApp(id) {
+        if(prompt("Senha para excluir:") === SENHA_MESTRA) {
+            await supabaseClient.from('apps').delete().eq('id', id);
+            fetchApps();
+        }
     }
 
     window.onload = () => {

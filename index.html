@@ -55,8 +55,8 @@
 </div>
 
 <script>
-    // Inicialização do Supabase com suas chaves
-    const SUPABASE_URL = "https://oulmpkxhxhsvqnkdokxs.supabase.co"; 
+    // Configurações com suas chaves
+    const SUPABASE_URL = "https://oulmpkxhhhsvqnkdokxs.supabase.co"; 
     const SUPABASE_KEY = "sb_publishable_py0n_yBNWKUDsCBQiKTMsw_Qr3nXcd5"; 
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -78,7 +78,7 @@
         loadApps();
     }
 
-    // Upload direto para o Storage do Supabase
+    // Upload usando o nome do bucket corrigido: 'APKS'
     document.getElementById("apkInput").addEventListener("change", async function() {
         const file = this.files[0];
         if (!file) return;
@@ -91,11 +91,10 @@
             const fileName = `${Date.now()}_${file.name}`;
             const filePath = `apks/${fileName}`;
             
-            // Sobe o arquivo para o bucket 'apks'
-            const { error: uploadError } = await _supabase.storage.from('apks').upload(filePath, file);
+            // ATENÇÃO: Mudamos para 'APKS' para bater com seu print
+            const { error: uploadError } = await _supabase.storage.from('APKS').upload(filePath, file);
             if (uploadError) throw uploadError;
 
-            // Salva os detalhes na tabela 'arquivos'
             const { error: dbError } = await _supabase.from('arquivos').insert([{ 
                 nome: file.name, 
                 path: filePath, 
@@ -103,10 +102,10 @@
             }]);
             if (dbError) throw dbError;
 
-            alert("APK enviado com sucesso para a Nuvem!");
+            alert("Sucesso! O APK agora está na nuvem.");
             loadApps();
         } catch (err) {
-            alert("Erro no upload. Certifique-se que o Bucket 'apks' está como PÚBLICO.");
+            alert("Erro! Verifique se a tabela 'arquivos' foi criada no banco de dados.");
             console.error(err);
         } finally {
             btn.innerHTML = `<i class="fas fa-cloud-upload-alt"></i> ADICIONAR APK NA NUVEM`;
@@ -156,7 +155,7 @@
     }
 
     async function baixarApp(path) {
-        const { data } = _supabase.storage.from('apks').getPublicUrl(path);
+        const { data } = _supabase.storage.from('APKS').getPublicUrl(path);
         if (data?.publicUrl) {
             window.open(data.publicUrl, '_blank');
         }
@@ -165,9 +164,9 @@
     async function excluirApp(id, path) {
         if (!confirm("Remover da nuvem permanentemente?")) return;
         await _supabase.from('arquivos').delete().eq('id', id);
-        await _supabase.storage.from('apks').remove([path]);
+        await _supabase.storage.from('APKS').remove([path]);
         loadApps();
     }
 </script>
 </body>
-    </html>
+</html>

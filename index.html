@@ -8,30 +8,166 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         /* ESTILO PREMIUM APPNET */
-        :root { --primary: #00ff88; --bg: #0b0f1a; --card: #161b2c; --text: #ffffff; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; overflow-x: hidden; }
-        
-        /* LOGIN ÚNICO */
-        #login-screen { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 1000; flex-direction: column; }
-        .login-box { background: var(--card); padding: 30px; border-radius: 20px; border: 1px solid var(--primary); text-align: center; width: 85%; max-width: 350px; box-shadow: 0 0 20px rgba(0,255,136,0.2); }
-        
-        /* BOTÃO ADMIN FLUTUANTE */
-        .admin-float-btn { position: fixed; bottom: 25px; right: 25px; background: var(--primary); color: #000; width: 55px; height: 55px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: pointer; z-index: 99; box-shadow: 0 4px 15px rgba(0,255,136,0.4); border: none; }
+        :root { 
+            --primary: #00ff88; 
+            --bg: #0b0f1a; 
+            --card: #161b2c; 
+            --text: #ffffff; 
+            --shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+        }
 
-        /* LISTA DE APPS */
-        .header { padding: 30px 20px; text-align: center; background: var(--card); border-bottom: 2px solid var(--primary); }
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            margin: 0; 
+            overflow-x: hidden; 
+        }
+
+        /* TELA DE LOGIN */
+        #login-screen { 
+            position: fixed; 
+            inset: 0; 
+            background: var(--bg); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 1000; 
+            flex-direction: column; 
+        }
+        .login-box { 
+            background: var(--card); 
+            padding: 30px; 
+            border-radius: 20px; 
+            border: 1px solid var(--primary); 
+            text-align: center; 
+            width: 85%; 
+            max-width: 350px; 
+            box-shadow: var(--shadow); 
+        }
+
+        /* CONTEÚDO PRINCIPAL */
+        .header { 
+            padding: 30px 20px; 
+            text-align: center; 
+            background: var(--card); 
+            border-bottom: 2px solid var(--primary); 
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
         .app-grid { padding: 20px; display: grid; gap: 15px; }
-        .app-card { background: var(--card); padding: 18px; border-radius: 15px; display: flex; align-items: center; justify-content: space-between; border-left: 5px solid var(--primary); transition: 0.3s; }
-        .app-card:active { transform: scale(0.98); }
-        
-        /* INPUTS E BOTÕES */
-        input { width: 100%; padding: 14px; margin: 10px 0; border-radius: 10px; border: 1px solid #334155; background: #0b0f1a; color: white; box-sizing: border-box; outline: none; }
-        .btn-main { background: var(--primary); color: #000; border: none; padding: 14px; border-radius: 10px; font-weight: bold; cursor: pointer; width: 100%; transition: 0.3s; }
-        .btn-download { background: var(--primary); color: #000; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px; border: none; }
-        
+
+        .app-card { 
+            background: var(--card); 
+            padding: 15px; 
+            border-radius: 15px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            border-left: 5px solid var(--primary); 
+            transition: 0.3s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .app-info { display: flex; align-items: center; gap: 12px; }
+        .app-icon { 
+            width: 50px; 
+            height: 50px; 
+            border-radius: 12px; 
+            object-fit: cover; 
+            border: 1px solid #334155;
+        }
+
+        /* BOTÕES */
+        .admin-float-btn { 
+            position: fixed; 
+            bottom: 25px; 
+            right: 25px; 
+            background: var(--primary); 
+            color: #000; 
+            width: 60px; 
+            height: 60px; 
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 24px; 
+            cursor: pointer; 
+            z-index: 99; 
+            box-shadow: 0 4px 20px rgba(0,255,136,0.5); 
+            border: none; 
+        }
+
+        input, select { 
+            width: 100%; 
+            padding: 14px; 
+            margin: 8px 0; 
+            border-radius: 10px; 
+            border: 1px solid #334155; 
+            background: #0b0f1a; 
+            color: white; 
+            box-sizing: border-box; 
+            outline: none; 
+        }
+
+        .btn-main { 
+            background: var(--primary); 
+            color: #000; 
+            border: none; 
+            padding: 14px; 
+            border-radius: 10px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            width: 100%; 
+            transition: 0.3s; 
+        }
+
+        .btn-download { 
+            background: var(--primary); 
+            color: #000; 
+            padding: 8px 16px; 
+            border-radius: 8px; 
+            text-decoration: none; 
+            font-weight: bold; 
+            font-size: 13px; 
+            border: none; 
+        }
+
+        /* MODAL E PAINEL */
         .hidden { display: none !important; }
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); padding: 20px; z-index: 1001; display: none; align-items: center; justify-content: center; }
+        .modal { 
+            position: fixed; 
+            inset: 0; 
+            background: rgba(0,0,0,0.9); 
+            padding: 20px; 
+            z-index: 1001; 
+            display: none; 
+            align-items: center; 
+            justify-content: center; 
+        }
+        .modal-content { 
+            width: 100%; 
+            max-width: 400px; 
+            background: var(--card); 
+            padding: 25px; 
+            border-radius: 20px; 
+            position: relative; 
+            border: 1px solid var(--primary); 
+        }
         .close-modal { position: absolute; right: 20px; top: 15px; color: var(--primary); font-size: 30px; cursor: pointer; }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            background: #1a1f2e;
+            color: #fff;
+            border: 1px solid #334155;
+            cursor: pointer;
+            border-radius: 8px;
+        }
+        .tab-active { background: var(--primary) !important; color: #000 !important; }
     </style>
 </head>
 <body>
@@ -61,9 +197,9 @@
 </div>
 
 <div id="admin-modal" class="modal">
-    <div style="width: 100%; max-width: 400px; background: var(--card); padding: 25px; border-radius: 20px; position: relative; border: 1px solid #334155;">
+    <div class="modal-content">
         <span class="close-modal" onclick="fecharPainel()">&times;</span>
-        <h3 style="margin-top:0">Painel Gerador</h3>
+        <h3 style="margin-top:0">Painel de Gerenciamento</h3>
         
         <div id="login-api">
             <input type="password" id="api-pass" placeholder="Senha Administrativa">
@@ -71,21 +207,37 @@
         </div>
         
         <div id="upload-area" class="hidden">
+            <div style="display: flex; gap: 8px; margin-bottom: 15px;">
+                <button onclick="mudarTipo('apk')" id="t-apk" class="tab-btn tab-active">APK</button>
+                <button onclick="mudarTipo('link')" id="t-link" class="tab-btn">LINK</button>
+            </div>
+
             <input type="text" id="new-app-name" placeholder="Nome do Aplicativo">
-            <input type="file" id="new-app-file" accept=".apk">
-            <button class="btn-main" id="btn-upload" onclick="uploadNovoApp()">SUBIR PARA NUVEM</button>
-            <div id="upload-status" style="margin-top: 15px; text-align: center; color: var(--primary); font-weight: bold;"></div>
+            <input type="text" id="new-app-icon" placeholder="URL da Foto (Ícone)">
+            
+            <div id="input-apk">
+                <input type="file" id="new-app-file" accept=".apk">
+            </div>
+            
+            <div id="input-link" class="hidden">
+                <input type="text" id="new-app-url" placeholder="Cole o link aqui">
+            </div>
+
+            <button class="btn-main" id="btn-upload" onclick="processarUpload()" style="margin-top:10px;">SALVAR NA NUVEM</button>
+            <div id="upload-status" style="margin-top: 15px; text-align: center; color: var(--primary); font-size: 13px;"></div>
         </div>
     </div>
 </div>
 
 <script>
-    // CONFIGURAÇÃO SUPABASE
     const SB_URL = "https://xahrzppgkcinpvwvednn.supabase.co";
     const SB_KEY = "sb_publishable_vRzozgRpPpBcDHduo9jYCQ_VE2onFyJ";
     const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
 
-    // LOGIN ÚNICO COM TRAVA (LocalStorage)
+    let currentType = 'apk';
+    let adminAcesso = false;
+
+    // LOGIN
     function fazerLogin() {
         const nome = document.getElementById('user-name').value;
         if(nome.trim().length < 2) return alert("Digite seu nome!");
@@ -100,7 +252,7 @@
         fetchApps();
     }
 
-    // LISTAR APPS E SISTEMA DE DOWNLOAD ZIP
+    // LISTAGEM
     async function fetchApps() {
         const { data, error } = await supabaseClient.from('apps').select('*').order('created_at', { ascending: false });
         const container = document.getElementById('app-list');
@@ -108,46 +260,55 @@
 
         if(data) {
             data.forEach(app => {
+                const icon = app.icon_url || "https://cdn-icons-png.flaticon.com/512/5738/5738031.png";
                 container.innerHTML += `
                     <div class="app-card">
-                        <div>
-                            <b style="font-size: 18px;">${app.name}</b><br>
-                            <small style="color: #888;">📦 ${app.size}</small>
+                        <div class="app-info">
+                            <img src="${icon}" class="app-icon">
+                            <div>
+                                <b style="font-size: 16px;">${app.name}</b><br>
+                                <small style="color: #888;">${app.size || 'Link'}</small>
+                            </div>
                         </div>
-                        <button class="btn-download" onclick="dispararDownloadZIP('${app.url}', '${app.name}')">BAIXAR</button>
-                        ${adminAcesso ? `<button onclick="deletarApp('${app.id}', '${app.file_path}')" style="background:none; border:none; color:#ff4444; margin-left:10px;"><i class="fas fa-trash"></i></button>` : ''}
+                        <div style="display:flex; align-items:center;">
+                            <button class="btn-download" onclick="acaoDownload('${app.url}', '${app.name}', '${app.size}')">OBTER</button>
+                            ${adminAcesso ? `<button onclick="deletarApp('${app.id}', '${app.file_path}')" style="background:none; border:none; color:#ff4444; margin-left:10px;"><i class="fas fa-trash"></i></button>` : ''}
+                        </div>
                     </div>
                 `;
             });
         }
     }
 
-    // FUNÇÃO INTELIGENTE: CONVERTE APK EM ZIP NO DOWNLOAD
+    // AÇÕES DE DOWNLOAD / LINK
+    function acaoDownload(url, nome, size) {
+        if(size === "LINK") {
+            window.open(url, '_blank');
+        } else {
+            dispararDownloadZIP(url, nome);
+        }
+    }
+
     async function dispararDownloadZIP(url, nomeApp) {
         try {
             const btn = event.target;
-            const originalText = btn.innerText;
-            btn.innerText = "PROCESSANDO...";
-            
+            btn.innerText = "...";
             const response = await fetch(url);
             const blob = await response.blob();
             const blobUrl = window.URL.createObjectURL(blob);
-            
             const link = document.createElement('a');
             link.href = blobUrl;
-            link.setAttribute('download', nomeApp.trim() + ".zip"); // Converte para ZIP automaticamente
+            link.setAttribute('download', nomeApp.trim() + ".zip");
             document.body.appendChild(link);
             link.click();
             link.remove();
-            window.URL.revokeObjectURL(blobUrl);
-            btn.innerText = originalText;
+            btn.innerText = "OBTER";
         } catch (e) {
             window.open(url, '_blank');
         }
     }
 
     // PAINEL ADMIN
-    let adminAcesso = false;
     function abrirPainel() { document.getElementById('admin-modal').style.display = 'flex'; }
     function fecharPainel() { document.getElementById('admin-modal').style.display = 'none'; }
 
@@ -162,41 +323,61 @@
         }
     }
 
-    // UPLOAD PARA NUVEM (LIBERADO ATÉ 500MB)
-    async function uploadNovoApp() {
+    function mudarTipo(tipo) {
+        currentType = tipo;
+        document.getElementById('t-apk').classList.toggle('tab-active', tipo === 'apk');
+        document.getElementById('t-link').classList.toggle('tab-active', tipo === 'link');
+        document.getElementById('input-apk').classList.toggle('hidden', tipo === 'link');
+        document.getElementById('input-link').classList.toggle('hidden', tipo === 'apk');
+    }
+
+    async function processarUpload() {
         const name = document.getElementById('new-app-name').value;
-        const file = document.getElementById('new-app-file').files[0];
+        const icon = document.getElementById('new-app-icon').value;
         const status = document.getElementById('upload-status');
-
-        if(!name || !file) return alert("Selecione o arquivo e dê um nome!");
-
-        status.innerText = "SUBINDO PARA NUVEM...";
-        const fileName = Date.now() + "_" + file.name;
-
-        const { data: upData, error: upErr } = await supabaseClient.storage.from('apks').upload(fileName, file);
-        if(upErr) return alert("Erro no Storage: " + upErr.message);
-
-        const { data: urlData } = supabaseClient.storage.from('apks').getPublicUrl(fileName);
         
+        if(!name) return alert("Defina um nome!");
+        status.innerText = "AGUARDE, PROCESSANDO...";
+
+        let urlFinal = "";
+        let pathFinal = "";
+        let sizeFinal = "LINK";
+
+        if(currentType === 'apk') {
+            const file = document.getElementById('new-app-file').files[0];
+            if(!file) return alert("Selecione o arquivo APK!");
+            
+            const fileName = Date.now() + "_" + file.name;
+            const { data, error } = await supabaseClient.storage.from('apks').upload(fileName, file);
+            if(error) return alert("Erro no Storage: " + error.message);
+
+            const { data: pUrl } = supabaseClient.storage.from('apks').getPublicUrl(fileName);
+            urlFinal = pUrl.publicUrl;
+            pathFinal = fileName;
+            sizeFinal = (file.size/(1024*1024)).toFixed(2) + " MB";
+        } else {
+            urlFinal = document.getElementById('new-app-url').value;
+            if(!urlFinal) return alert("Cole o link de destino!");
+        }
+
         const { error: dbErr } = await supabaseClient.from('apps').insert([
-            { name: name, size: (file.size/(1024*1024)).toFixed(2) + " MB", url: urlData.publicUrl, file_path: fileName }
+            { name: name, url: urlFinal, size: sizeFinal, file_path: pathFinal, icon_url: icon }
         ]);
 
         if(!dbErr) {
-            status.innerText = "CONCLUÍDO COM SUCESSO!";
-            document.getElementById('new-app-name').value = "";
+            status.innerText = "✅ SALVO COM SUCESSO!";
             fetchApps();
+            setTimeout(fecharPainel, 1500);
         }
     }
 
     async function deletarApp(id, path) {
-        if(!confirm("Deseja excluir este App da nuvem?")) return;
+        if(!confirm("Excluir permanentemente?")) return;
         await supabaseClient.from('apps').delete().eq('id', id);
-        await supabaseClient.storage.from('apks').remove([path]);
+        if(path) await supabaseClient.storage.from('apks').remove([path]);
         fetchApps();
     }
 
-    // AUTO LOGIN (LOCK)
     window.onload = () => {
         const savedUser = localStorage.getItem('appnet_user_v2');
         if(savedUser) carregarSistema(savedUser);
@@ -204,4 +385,4 @@
 </script>
 
 </body>
-</html>
+    </html>

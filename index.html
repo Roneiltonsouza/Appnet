@@ -1,141 +1,129 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Appnet Pro | Cloud Master</title>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-storage-compat.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>Appnet Pro - Cloud</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --bg: #0b0f1a; --card: #161b2c; --accent: #ff4500; }
-        body { background: var(--bg); color: white; font-family: sans-serif; }
-        .app-card { background: var(--card); border: 1px solid #232a3d; border-radius: 18px; transition: 0.3s; }
-        #geradorMenu { display: none; position: fixed; inset: 0; background: #0b0f1a; z-index: 100; }
-        .progress-bar { width: 0%; height: 4px; background: #ff4500; transition: 0.3s; border-radius: 2px; }
+        :root { --primary: #00ff88; --bg: #0f172a; }
+        body { font-family: sans-serif; background: var(--bg); color: white; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: auto; }
+        .card { background: #1e293b; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #334155; }
+        input, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: none; box-sizing: border-box; }
+        input { background: #0f172a; color: white; border: 1px solid #475569; }
+        button { background: var(--primary); color: #000; font-weight: bold; cursor: pointer; }
+        button.delete { background: #ef4444; color: white; margin-top: 10px; }
+        .app-item { background: #334155; padding: 15px; border-radius: 8px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center; }
+        #status { text-align: center; color: var(--primary); font-size: 0.9em; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col pb-24">
+<body>
 
-<div id="geradorMenu" class="flex flex-col">
-    <header class="p-4 bg-gray-900 border-b border-orange-600 flex justify-between items-center">
-        <span class="font-black text-orange-600 uppercase">Painel Cloud Store</span>
-        <button onclick="document.getElementById('geradorMenu').style.display='none'" class="text-red-500 font-bold uppercase text-xs">Fechar</button>
-    </header>
-    <div class="p-6 flex flex-col items-center">
-        <div id="uploadStatus" class="hidden w-full max-w-xs mb-4 text-center">
-            <span id="percent" class="text-orange-600 font-black text-2xl">0%</span>
-            <div class="w-full bg-gray-800 rounded-full h-1 mt-2">
-                <div id="bar" class="progress-bar"></div>
-            </div>
-        </div>
-        <button onclick="document.getElementById('apkInput').click()" id="uploadBtn" class="w-full max-w-xs bg-orange-600 p-5 rounded-2xl font-black shadow-lg mb-8 uppercase text-white">
-            <i class="fas fa-cloud-upload-alt mr-2"></i> Adicionar APK Gigante
-        </button>
-        <input type="file" id="apkInput" accept=".apk" class="hidden">
-        <div id="adminList" class="w-full max-w-2xl"></div>
+<div class="container">
+    <h2>🚀 Appnet Pro - Gerenciador</h2>
+    
+    <div class="card">
+        <h3>Subir Novo APK</h3>
+        <input type="text" id="appName" placeholder="Nome do Aplicativo">
+        <input type="file" id="appFile" accept=".apk">
+        <button onclick="uploadApp()">Enviar para Nuvem</button>
+        <div id="status"></div>
     </div>
+
+    <div id="appList">
+        <h3>Meus Aplicativos</h3>
+        </div>
 </div>
 
-<header class="p-5 flex justify-between items-center border-b border-white/5 bg-gray-900/40 sticky top-0 z-50">
-    <div class="flex flex-col">
-        <span class="font-black text-orange-600 text-2xl uppercase">APPNET PRO</span>
-        <span class="text-[9px] text-gray-500 font-bold uppercase tracking-[4px]">Servidor Google</span>
-    </div>
-    <button onclick="solicitarSenha()" class="bg-white/5 p-3 rounded-xl border border-white/10"><i class="fas fa-cog text-gray-400"></i></button>
-</header>
-
-<main id="appList" class="p-4 flex-1 max-w-4xl mx-auto w-full grid grid-cols-1 gap-4">
-    <div class="text-center mt-20 text-gray-600 font-bold uppercase text-xs animate-pulse">Sincronizando...</div>
-</main>
-
 <script>
-    const firebaseConfig = {
-        apiKey: "AIzaLXKFaZONAeHabdqOV3b0VE6ISpPUMvLkNKa",
-        authDomain: "appnet-pro.firebaseapp.com",
-        projectId: "appnet-pro",
-        storageBucket: "appnet-pro.appspot.com" // Aqui é onde o APK de 74MB vai entrar!
-    };
+    // Configurações extraídas do seu painel Supabase
+    const SB_URL = "https://xahrzppgkcinpvwvednn.supabase.co"; //
+    const SB_KEY = "sb_publishable_vRzozgRpPpBcDHduo9jYCQ_VE2onFyJ"; //
+    
+    const supabase = supabase.createClient(SB_URL, SB_KEY);
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    const storage = firebase.storage();
+    // 1. FUNÇÃO PARA LISTAR APPS
+    async function fetchApps() {
+        const { data, error } = await supabase.from('apps').select('*').order('created_at', { ascending: false });
+        if (error) return console.error(error);
 
-    function solicitarSenha() {
-        if (prompt("Senha Master:") === "Appnetrdgapi") document.getElementById('geradorMenu').style.display = 'flex';
+        const list = document.getElementById('appList');
+        list.innerHTML = '<h3>Meus Aplicativos</h3>';
+        
+        data.forEach(app => {
+            const div = document.createElement('div');
+            div.className = 'app-item';
+            div.innerHTML = `
+                <div>
+                    <strong>${app.name}</strong><br>
+                    <small>${app.size}</small>
+                </div>
+                <div>
+                    <a href="${app.url}" target="_blank" style="color: #00ff88; text-decoration: none; margin-right: 10px;">Baixar</a>
+                    <button class="delete" onclick="deleteApp('${app.id}', '${app.file_path}')" style="width: auto; padding: 5px 10px;">X</button>
+                </div>
+            `;
+            list.appendChild(div);
+        });
     }
 
-    // UPLOAD PARA O FIREBASE STORAGE (SEM LIMITE DE 10MB)
-    document.getElementById("apkInput").addEventListener("change", (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
+    // 2. FUNÇÃO PARA UPLOAD
+    async function uploadApp() {
+        const name = document.getElementById('appName').value;
+        const file = document.getElementById('appFile').files[0];
+        const status = document.getElementById('status');
 
-        const btn = document.getElementById("uploadBtn");
-        const status = document.getElementById("uploadStatus");
-        const bar = document.getElementById("bar");
-        const percentTxt = document.getElementById("percent");
+        if (!name || !file) return alert("Preencha o nome e selecione o arquivo!");
 
-        btn.disabled = true;
-        status.classList.remove("hidden");
+        status.innerText = "Subindo arquivo... aguarde.";
 
-        const storageRef = storage.ref('apks/' + file.name);
-        const uploadTask = storageRef.put(file);
+        const fileName = `${Date.now()}_${file.name}`;
+        const fileSize = (file.size / (1024 * 1024)).toFixed(2) + " MB";
 
-        uploadTask.on('state_changed', 
-            (snapshot) => {
-                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                bar.style.width = progress + '%';
-                percentTxt.innerText = Math.round(progress) + '%';
-            }, 
-            (error) => { alert("Erro ao subir: " + error.message); }, 
-            () => {
-                uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
-                    db.collection("arquivos").add({
-                        nome: file.name,
-                        url: downloadURL,
-                        tamanho: (file.size / (1024 * 1024)).toFixed(2) + " MB",
-                        criadoEm: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                    alert("APK Sincronizado!");
-                    status.classList.add("hidden");
-                    btn.disabled = false;
-                });
-            }
-        );
-    });
+        // Upload para o Storage (bucket: apks)
+        const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('apks')
+            .upload(fileName, file);
 
-    db.collection("arquivos").orderBy("criadoEm", "desc").onSnapshot((snapshot) => {
-        const list = document.getElementById("appList");
-        const adminList = document.getElementById("adminList");
-        list.innerHTML = ""; adminList.innerHTML = "";
+        if (uploadError) {
+            status.innerText = "Erro no upload: " + uploadError.message;
+            return;
+        }
 
-        snapshot.forEach((doc) => {
-            const app = doc.data();
-            list.innerHTML += `
-                <div class="app-card p-5 flex justify-between items-center">
-                    <div class="truncate pr-4 flex-1">
-                        <div class="text-[14px] font-black uppercase text-white truncate">${app.nome}</div>
-                        <div class="text-[10px] text-orange-600 font-bold mt-1">${app.tamanho}</div>
-                    </div>
-                    <a href="${app.url}" target="_blank" class="bg-orange-600 px-7 py-3 rounded-xl text-[11px] font-black uppercase text-white">Instalar</a>
-                </div>`;
-            
-            adminList.innerHTML += `
-                <div class="bg-slate-900 p-4 rounded-2xl mb-3 flex justify-between items-center">
-                    <span class="text-[11px] font-bold text-gray-400 truncate w-40">${app.nome}</span>
-                    <button onclick="remover('${doc.id}', '${app.nome}')" class="text-red-500 font-black text-[10px]">EXCLUIR</button>
-                </div>`;
-        });
-    });
+        // Pegar URL pública do arquivo
+        const { data: urlData } = supabase.storage.from('apks').getPublicUrl(fileName);
+        const publicUrl = urlData.publicUrl;
 
-    async function remover(id, nome) {
-        if (confirm("Apagar da nuvem?")) {
-            await db.collection("arquivos").doc(id).delete();
-            await storage.ref('apks/' + nome).delete();
+        // Salvar no Banco de Dados (tabela: apps)
+        const { error: dbError } = await supabase.from('apps').insert([
+            { name: name, size: fileSize, url: publicUrl, file_path: fileName }
+        ]);
+
+        if (dbError) {
+            status.innerText = "Erro ao salvar dados: " + dbError.message;
+        } else {
+            status.innerText = "Concluído com sucesso!";
+            document.getElementById('appName').value = "";
+            fetchApps();
         }
     }
+
+    // 3. FUNÇÃO PARA DELETAR
+    async function deleteApp(id, filePath) {
+        if (!confirm("Tem certeza que deseja excluir?")) return;
+
+        // Deleta do banco
+        await supabase.from('apps').delete().eq('id', id);
+        // Deleta o arquivo do storage
+        await supabase.storage.from('apks').remove([filePath]);
+
+        fetchApps();
+    }
+
+    // Iniciar carregando a lista
+    fetchApps();
 </script>
+
 </body>
 </html>

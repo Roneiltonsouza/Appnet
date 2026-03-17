@@ -4,180 +4,203 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Appnet Pro | Store</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --bg: #0f172a; --card: #1e293b; --accent: #ea580c; }
-        body { background: var(--bg); color: white; font-family: sans-serif; overflow: hidden; }
+        body { background: var(--bg); color: white; font-family: sans-serif; overflow-x: hidden; }
         .app-card { background: var(--card); border: 1px solid #334155; transition: 0.3s; }
-        /* Tela de Login Único */
-        #auth-screen { 
-            display: none; position: fixed; inset: 0; 
-            background: rgba(15, 23, 42, 0.98); z-index: 100; 
-            align-items: center; justify-content: center; 
-        }
-        .owner-only { display: none !important; }
+        #geradorMenu { display: none; position: fixed; inset: 0; background: #0f172a; z-index: 100; }
+        .wa-btn { background: #25d366; color: white; }
     </style>
 </head>
-<body class="min-h-screen">
+<body class="min-h-screen flex flex-col">
 
-<div id="auth-screen">
-    <div class="w-full max-w-sm p-6 bg-gray-800 rounded-xl shadow-2xl border border-gray-700 mx-4 text-center">
-        <h2 class="text-orange-500 font-bold mb-6 uppercase tracking-widest text-xl">Acesso Restrito</h2>
-        
-        <input type="password" id="adminPass" placeholder="Digite a senha netchaveapi" 
-               class="w-full p-4 rounded-lg bg-gray-900 border border-gray-600 focus:border-orange-500 outline-none mb-2 text-white text-center text-lg">
-        
-        <p id="msgErro" class="hidden text-red-500 text-xs font-bold mb-4 uppercase">
-            ⚠️ Acesso Negado!<br>Entre em contato com o suporte.
-        </p>
-
-        <button onclick="validarDono()" class="w-full py-4 bg-orange-600 hover:bg-orange-500 rounded-lg font-black text-white shadow-xl mb-4">
-            ENTRAR NO SISTEMA
+<div id="geradorMenu" class="flex flex-col">
+    <header class="p-4 bg-gray-900 border-b border-orange-500/30 flex justify-between items-center">
+        <span class="font-black text-orange-500 tracking-tighter uppercase">Painel Gerador</span>
+        <button onclick="fecharGerador()" class="text-[10px] bg-slate-800 px-4 py-2 rounded-full font-bold uppercase border border-slate-700">Sair</button>
+    </header>
+    
+    <div class="p-6 flex flex-col items-center">
+        <button onclick="selectAPK()" id="uploadBtn" class="w-full max-w-xs bg-orange-600 p-4 rounded-2xl font-black shadow-lg active:scale-95 transition-all mb-8 flex items-center justify-center gap-2">
+            <i class="fas fa-plus"></i> ADICIONAR NOVO APK
         </button>
-
-        <div class="flex flex-col gap-3">
-            <a href="https://wa.me/5588988088578" target="_blank" class="text-green-500 font-bold text-sm">Suporte WhatsApp</a>
-            <button onclick="fecharLogin()" class="text-gray-500 text-xs uppercase">Voltar à Loja</button>
-        </div>
+        <input type="file" id="apkInput" accept=".apk" class="hidden">
+        
+        <h3 class="text-gray-500 text-[10px] uppercase tracking-[0.2em] mb-4 border-b border-slate-800 w-full text-center pb-2">Gerenciamento de APKs</h3>
+        <div id="adminList" class="w-full max-w-2xl"></div>
     </div>
 </div>
 
-<div id="main-content" class="w-full h-screen flex flex-col">
-    <header class="bg-gray-900 p-4 flex justify-between items-center border-b border-gray-700 shadow-md">
-        <div class="flex flex-col">
+<div id="main-content" class="flex flex-col h-screen">
+    <header class="bg-gray-900 p-4 flex justify-between items-center border-b border-gray-800">
+        <div>
             <span class="font-bold text-orange-500 text-xl font-mono uppercase tracking-tighter">APPNET PRO</span>
-            <p id="statusTag" class="text-[9px] text-gray-500 uppercase tracking-widest">Acesso Público</p>
         </div>
         
-        <div class="flex gap-2">
-            <a href="https://wa.me/5588988088578" target="_blank" class="bg-green-600/20 text-green-500 border border-green-500/30 px-3 py-2 rounded-lg text-[10px] font-bold">WHATSAPP</a>
-            
-            <button onclick="abrirLogin()" id="btnDonoLogin" class="bg-gray-800 text-gray-400 px-3 py-2 rounded-lg text-[10px] font-bold border border-gray-700">ABA DONO</button>
-            
-            <button onclick="document.getElementById('apkInput').click()" id="uploadBtn" 
-                    class="owner-only bg-orange-600 px-4 py-2 rounded-lg font-bold text-sm shadow-lg active:scale-95 transition-all">
-                + ADD APK / ZIP
-            </button>
-        </div>
+        <a href="https://wa.me/5588988088578" target="_blank" class="wa-btn flex items-center gap-2 px-3 py-2 rounded-lg font-bold text-xs shadow-lg active:scale-95 transition-all">
+            <i class="fab fa-whatsapp text-lg"></i>
+            <span>SUPORTE</span>
+        </a>
     </header>
 
-    <input type="file" id="apkInput" accept=".apk,.zip" class="hidden">
+    <button onclick="solicitarSenhaGerador()" class="w-full bg-slate-800/40 border-b border-slate-700 py-3 text-[10px] font-black text-gray-500 hover:text-orange-500 transition-all tracking-[0.3em] uppercase">
+        ⚡ Painel Gerador ⚡
+    </button>
 
-    <div class="p-4 max-w-4xl mx-auto w-full flex-1 overflow-y-auto" id="appList">
-        <div class="text-center mt-20 text-gray-600">Carregando lista...</div>
-    </div>
+    <div id="appList" class="p-4 flex-1 overflow-y-auto max-w-4xl mx-auto w-full">
+        </div>
 </div>
 
 <script>
-    const SUPABASE_URL = "https://oulmpkxhhhsvqnkdokxs.supabase.co"; 
-    const SUPABASE_KEY = "sb_publishable_py0n_yBNWKUDsCBQiKTMsw_Qr3nXcd5"; 
-    const supabase = libsupabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    let db;
+    const request = indexedDB.open("AppnetStoreDB", 1);
 
-    let isOwner = false;
-
-    window.onload = () => { renderList(); };
-
-    // Controle da Tela de Login Único
-    function abrirLogin() { 
-        document.getElementById('auth-screen').style.display = 'flex'; 
-        document.getElementById('msgErro').classList.add('hidden');
-    }
-    
-    function fecharLogin() { document.getElementById('auth-screen').style.display = 'none'; }
-
-    // VALIDAÇÃO DA SENHA ÚNICA
-    function validarDono() {
-        const pass = document.getElementById('adminPass').value;
-        if (pass === "netchaveapi") {
-            isOwner = true;
-            fecharLogin();
-            document.getElementById('btnDonoLogin').style.display = 'none';
-            document.getElementById('statusTag').innerText = "MODO ADMINISTRADOR";
-            document.getElementById('statusTag').classList.replace('text-gray-500', 'text-orange-500');
-            
-            // Exibe os controles secretos
-            document.querySelectorAll('.owner-only').forEach(el => {
-                el.style.setProperty('display', 'block', 'important');
-            });
-            renderList();
-        } else {
-            document.getElementById('msgErro').classList.remove('hidden');
-            document.getElementById('adminPass').value = "";
+    request.onupgradeneeded = (e) => {
+        db = e.target.result;
+        if (!db.objectStoreNames.contains("apps")) {
+            db.createObjectStore("apps", { keyPath: "name" });
         }
-    }
-
-    // Upload e Conversão Lógica
-    document.getElementById('apkInput').onchange = async (e) => {
-        const file = e.target.files[0];
-        if (!file || !isOwner) return;
-        
-        const btn = document.getElementById('uploadBtn');
-        btn.innerText = "CONVERTENDO/SUBINDO...";
-        btn.disabled = true;
-
-        const filePath = `store/${Date.now()}_${file.name}`;
-        const { error: uploadError } = await supabase.storage.from('apks').upload(filePath, file);
-
-        if (!uploadError) {
-            await supabase.from('arquivos').insert([
-                { nome: file.name, tamanho: (file.size/1024/1024).toFixed(2) + " MB", usuario: "admin", path: filePath }
-            ]);
-            renderList();
-        } else { alert("Erro no servidor!"); }
-        
-        btn.innerText = "+ ADD APK / ZIP";
-        btn.disabled = false;
     };
 
-    async function renderList() {
-        const { data: arquivos } = await supabase.from('arquivos').select('*').order('created_at', { ascending: false });
-        const list = document.getElementById('appList');
-        list.innerHTML = "";
+    request.onsuccess = (e) => {
+        db = e.target.result;
+        loadApps();
+    };
 
-        if (arquivos && arquivos.length > 0) {
-            arquivos.forEach(app => {
-                const card = document.createElement('div');
-                card.className = 'app-card p-4 rounded-xl mb-3 flex justify-between items-center shadow-lg';
-                
-                // Botão excluir só aparece se for dono
-                const deleteBtn = isOwner ? `<button onclick="excluir(${app.id}, '${app.path}')" class="bg-red-900/20 text-red-500 px-2 py-1 rounded text-[9px] border border-red-500/20 ml-2">APAGAR</button>` : '';
+    function solicitarSenhaGerador() {
+        const pass = prompt("Senha de acesso:");
+        if (pass === "Appnetrdgapi") {
+            document.getElementById('geradorMenu').style.display = 'flex';
+        } else if (pass !== null) {
+            alert("Senha incorreta!");
+        }
+    }
 
-                card.innerHTML = `
-                    <div class="truncate flex-1 pr-2">
-                        <div class="font-bold text-white text-sm truncate uppercase tracking-tight">${app.nome}</div>
-                        <div class="text-[9px] text-gray-500 italic">${app.tamanho}</div>
-                    </div>
-                    <div class="flex items-center">
-                        <button onclick="baixar('${app.path}', '${app.nome}')" 
-                                class="bg-orange-600 text-white px-5 py-2 rounded-lg font-black text-xs shadow-lg active:scale-95 transition-all">
-                            INSTALAR
-                        </button>
-                        ${deleteBtn}
-                    </div>`;
-                list.appendChild(card);
+    function fecharGerador() {
+        document.getElementById('geradorMenu').style.display = 'none';
+        loadApps();
+    }
+
+    function selectAPK() {
+        document.getElementById("apkInput").click();
+    }
+
+    document.getElementById("apkInput").addEventListener("change", async function() {
+        const file = this.files[0];
+        if (!file) return;
+
+        const btn = document.getElementById("uploadBtn");
+        btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> COMPRIMINDO...`;
+        btn.disabled = true;
+
+        try {
+            const zip = new JSZip();
+            zip.file(file.name, file);
+            const zipBlob = await zip.generateAsync({
+                type: "blob",
+                compression: "DEFLATE",
+                compressionOptions: { level: 9 }
             });
-        } else {
-            list.innerHTML = `<p class="text-center mt-10 text-gray-600">Loja vazia.</p>`;
+
+            const reader = new FileReader();
+            reader.onload = function() {
+                const tx = db.transaction(["apps"], "readwrite");
+                const store = tx.objectStore("apps");
+                
+                store.put({
+                    name: file.name,
+                    zip: reader.result,
+                    size: (file.size / (1024 * 1024)).toFixed(2) + " MB",
+                    date: new Date().toLocaleDateString()
+                });
+                
+                tx.oncomplete = () => {
+                    loadApps();
+                    btn.innerHTML = `<i class="fas fa-plus"></i> ADICIONAR NOVO APK`;
+                    btn.disabled = false;
+                    alert("APK adicionado à loja!");
+                };
+            };
+            reader.readAsDataURL(zipBlob);
+        } catch (err) {
+            alert("Erro ao processar arquivo");
+            btn.innerHTML = `<i class="fas fa-plus"></i> ADICIONAR NOVO APK`;
+            btn.disabled = false;
         }
+    });
+
+    function loadApps() {
+        const tx = db.transaction(["apps"], "readonly");
+        const store = tx.objectStore("apps");
+        const getAll = store.getAll();
+
+        getAll.onsuccess = () => {
+            const apps = getAll.result;
+            renderLoja(apps);
+            renderAdmin(apps);
+        };
     }
 
-    async function baixar(path, nome) {
-        const { data } = await supabase.storage.from('apks').getPublicUrl(path);
-        if (data?.publicUrl) {
-            const a = document.createElement('a');
-            a.href = data.publicUrl;
-            // O navegador trata o download e o usuário instala o APK extraído ou ZIP direto
-            a.download = nome;
-            a.click();
-        }
+    function renderLoja(apps) {
+        const list = document.getElementById("appList");
+        list.innerHTML = apps.length ? "" : `<div class="text-center mt-20 text-slate-600 italic">Nenhum aplicativo na loja.</div>`;
+        
+        apps.forEach(app => {
+            list.innerHTML += `
+                <div class="app-card p-4 rounded-xl mb-3 flex justify-between items-center shadow-lg border-l-4 border-orange-600">
+                    <div class="truncate pr-4 flex-1">
+                        <div class="text-sm font-black uppercase truncate text-slate-100">${app.name}</div>
+                        <div class="text-[10px] text-slate-500 font-mono mt-1">${app.size} • ${app.date}</div>
+                    </div>
+                    <button onclick="installApp('${app.name}')" class="bg-orange-600 hover:bg-orange-500 text-white px-6 py-2 rounded-lg text-xs font-black uppercase transition-colors shadow-lg">Instalar</button>
+                </div>`;
+        });
     }
 
-    async function excluir(id, path) {
-        if (!confirm("Dono, apagar este arquivo?")) return;
-        await supabase.from('arquivos').delete().eq('id', id);
-        await supabase.storage.from('apks').remove([path]);
-        renderList();
+    function renderAdmin(apps) {
+        const list = document.getElementById("adminList");
+        list.innerHTML = "";
+        
+        apps.forEach(app => {
+            list.innerHTML += `
+                <div class="bg-slate-800/40 p-4 rounded-xl mb-2 flex justify-between items-center border border-slate-700/50">
+                    <div class="flex flex-col">
+                        <span class="text-xs font-bold text-slate-300 truncate max-w-[150px]">${app.name}</span>
+                        <span class="text-[9px] text-slate-500">${app.size}</span>
+                    </div>
+                    <button onclick="deleteApp('${app.name}')" class="text-[9px] bg-red-600/10 text-red-500 border border-red-500/20 px-4 py-2 rounded-lg font-bold hover:bg-red-600 hover:text-white transition-all">EXCLUIR</button>
+                </div>`;
+        });
+    }
+
+    async function installApp(name) {
+        const tx = db.transaction(["apps"], "readonly");
+        const store = tx.objectStore("apps");
+        const req = store.get(name);
+
+        req.onsuccess = async () => {
+            const zipBlob = await fetch(req.result.zip).then(r => r.blob());
+            const zip = await JSZip.loadAsync(zipBlob);
+            const fileName = Object.keys(zip.files)[0];
+            const apkBlob = await zip.files[fileName].async("blob");
+            
+            const url = URL.createObjectURL(apkBlob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = fileName;
+            link.click();
+            URL.revokeObjectURL(url);
+        };
+    }
+
+    function deleteApp(name) {
+        if (!confirm("Deseja apagar permanentemente?")) return;
+        const tx = db.transaction(["apps"], "readwrite");
+        tx.objectStore("apps").delete(name);
+        tx.oncomplete = () => loadApps();
     }
 </script>
 </body>

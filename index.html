@@ -10,26 +10,54 @@
         :root { --bg: #0f172a; --card: #1e293b; --accent: #ea580c; }
         body { background: var(--bg); color: white; font-family: sans-serif; }
         .app-card { background: var(--card); border: 1px solid #334155; transition: 0.3s; }
-        .app-card:hover { border-color: #ea580c; }
-        /* Esconde por padrão o que é apenas do dono */
-        .owner-controls { display: none !important; }
+        #auth-screen { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.98); z-index: 50; align-items: center; justify-content: center; }
+        .owner-controls { display: none; }
+        .error-msg { display: none; color: #ef4444; font-size: 12px; margin-top: 10px; font-weight: bold; }
     </style>
 </head>
 <body class="min-h-screen">
 
+<div id="auth-screen">
+    <div class="w-full max-w-sm p-6 bg-gray-800 rounded-xl shadow-2xl border border-gray-700 mx-4 text-center">
+        <h2 class="text-orange-500 font-bold mb-4 uppercase tracking-wider">Acesso Restrito</h2>
+        
+        <input type="password" id="adminPass" placeholder="Digite a Senha Única" 
+               class="w-full p-4 rounded-lg bg-gray-900 border border-gray-600 focus:border-orange-500 outline-none mb-2 text-white text-center">
+        
+        <div id="msgErro" class="error-msg mb-4">
+            ⚠️ ACESSO NEGADO!<br>Entre em contato com o suporte.
+        </div>
+
+        <button onclick="validarDono()" class="w-full py-4 bg-orange-600 hover:bg-orange-500 transition-all rounded-lg font-black text-white shadow-xl mb-4">
+            ENTRAR AGORA
+        </button>
+
+        <div class="flex flex-col gap-4">
+            <a href="https://wa.me/5588988088578" target="_blank" class="text-green-500 font-bold text-sm underline">
+                Falar com Suporte WhatsApp
+            </a>
+            <button onclick="fecharLogin()" class="text-gray-500 text-xs">Voltar para a Loja</button>
+        </div>
+    </div>
+</div>
+
 <div id="main-content" class="w-full h-screen flex flex-col items-stretch">
     <header class="bg-gray-900 p-4 flex justify-between items-center border-b border-gray-700 shadow-md">
-        <div>
+        <div class="flex flex-col">
             <span class="font-bold text-orange-500 text-xl font-mono uppercase">APPNET PRO</span>
             <p id="statusTag" class="text-[9px] text-gray-500 uppercase tracking-widest">Acesso Público</p>
         </div>
         
         <div class="flex gap-2">
-            <button onclick="loginDono()" id="btnDonoLogin" class="bg-gray-800 text-gray-400 px-3 py-2 rounded-lg text-[10px] font-bold border border-gray-700">DONO</button>
+            <a href="https://wa.me/5588988088578" target="_blank" class="bg-green-600/20 text-green-500 border border-green-500/30 px-3 py-2 rounded-lg text-[10px] font-bold flex items-center">
+                WHATSAPP
+            </a>
+
+            <button onclick="abrirLogin()" id="btnDono" class="bg-gray-800 text-gray-400 px-3 py-2 rounded-lg text-[10px] font-bold border border-gray-700">DONO</button>
             
             <button onclick="document.getElementById('apkInput').click()" id="uploadBtn" 
-                    class="owner-controls bg-orange-600 px-4 py-2 rounded-lg font-bold text-sm shadow-lg active:scale-95 transition-all">
-                + ADICIONAR APK
+                    class="owner-controls bg-orange-600 px-4 py-2 rounded-lg font-bold text-sm shadow-lg">
+                + ADD APK
             </button>
         </div>
     </header>
@@ -47,30 +75,33 @@
 
     let isOwner = false;
 
-    window.onload = () => {
-        renderList();
-    };
+    window.onload = () => { renderList(); };
 
-    // CORREÇÃO: Função de Login do Dono
-    function loginDono() {
-        const senha = prompt("🔒 Digite a senha do Dono:");
-        
-        if (senha === "netchaveapi") {
+    function abrirLogin() { 
+        document.getElementById('auth-screen').style.display = 'flex'; 
+        document.getElementById('msgErro').style.display = 'none';
+    }
+    
+    function fecharLogin() { document.getElementById('auth-screen').style.display = 'none'; }
+
+    // VALIDAÇÃO COM ACESSO ÚNICO
+    function validarDono() {
+        const pass = document.getElementById('adminPass').value;
+        const msgErro = document.getElementById('msgErro');
+
+        if (pass === "netchaveapi") {
             isOwner = true;
+            fecharLogin();
+            document.getElementById('btnDono').style.display = 'none';
+            document.getElementById('statusTag').innerText = "MODO DONO ATIVO";
+            document.getElementById('statusTag').className = "text-[9px] text-orange-500 font-bold uppercase";
             
-            // Força a exibição dos botões de controle
-            const style = document.createElement('style');
-            style.innerHTML = '.owner-controls { display: block !important; } .owner-delete { display: inline-block !important; }';
-            document.head.appendChild(style);
-
-            document.getElementById('statusTag').innerText = "Modo Administrador";
-            document.getElementById('statusTag').className = "text-[9px] text-orange-500 uppercase tracking-widest font-bold";
-            document.getElementById('btnDonoLogin').style.display = 'none'; // Esconde o botão login após logado
-            
-            alert("Acesso liberado! Você agora pode adicionar e excluir arquivos.");
-            renderList(); // Recarrega a lista para mostrar os botões de excluir nos cards
-        } else if (senha !== null) {
-            alert("Senha incorreta!");
+            document.querySelectorAll('.owner-controls').forEach(el => el.style.display = 'block');
+            renderList();
+        } else {
+            // Se errar a senha, mostra o aviso de negado
+            msgErro.style.display = 'block';
+            document.getElementById('adminPass').value = "";
         }
     }
 
@@ -79,7 +110,7 @@
         if (!file || !isOwner) return;
         
         const btn = document.getElementById('uploadBtn');
-        btn.innerText = "ENVIANDO...";
+        btn.innerText = "SUBINDO...";
         btn.disabled = true;
 
         const filePath = `store/${Date.now()}_${file.name}`;
@@ -90,11 +121,9 @@
                 { nome: file.name, tamanho: (file.size/1024/1024).toFixed(2) + " MB", usuario: "admin", path: filePath }
             ]);
             renderList();
-        } else { 
-            alert("Erro no upload! Verifique se o bucket 'apks' está como PUBLIC no Supabase."); 
-        }
+        } else { alert("Erro ao subir arquivo."); }
         
-        btn.innerText = "+ ADICIONAR APK";
+        btn.innerText = "+ ADD APK";
         btn.disabled = false;
     };
 
@@ -108,25 +137,24 @@
                 const card = document.createElement('div');
                 card.className = 'app-card p-4 rounded-xl mb-3 flex justify-between items-center shadow-lg';
                 
-                // Botão de excluir com classe especial para controle de visibilidade
-                const deleteHtml = `<button onclick="excluir(${app.id}, '${app.path}')" class="owner-controls owner-delete bg-red-900/20 text-red-500 px-2 py-1 rounded border border-red-500/30 text-[10px] ml-2">EXCLUIR</button>`;
+                const deleteBtn = isOwner ? `<button onclick="excluir(${app.id}, '${app.path}')" class="text-red-500 text-[10px] ml-4 border border-red-500/20 p-1 px-2 rounded">EXCLUIR</button>` : '';
 
                 card.innerHTML = `
                     <div class="truncate flex-1">
-                        <div class="font-bold text-white text-sm truncate uppercase">${app.nome}</div>
-                        <div class="text-[10px] text-gray-500 font-mono">${app.tamanho}</div>
+                        <div class="font-bold text-white text-sm truncate uppercase tracking-tight">${app.nome}</div>
+                        <div class="text-[9px] text-gray-500">${app.tamanho}</div>
                     </div>
                     <div class="flex items-center">
                         <button onclick="baixar('${app.path}', '${app.nome}')" 
-                                class="bg-orange-600/10 text-orange-500 border border-orange-500/30 px-4 py-2 rounded-lg font-black text-xs uppercase hover:bg-orange-600 hover:text-white transition-all">
-                            Download
+                                class="bg-orange-600/10 text-orange-500 border border-orange-500/30 px-5 py-2 rounded-lg font-black text-xs uppercase transition-all active:scale-95">
+                            BAIXAR
                         </button>
-                        ${deleteHtml}
+                        ${deleteBtn}
                     </div>`;
                 list.appendChild(card);
             });
         } else {
-            list.innerHTML = `<div class="text-center mt-20 text-gray-600 text-sm italic">Nenhum APK disponível.</div>`;
+            list.innerHTML = `<div class="text-center mt-20 text-gray-700 text-sm">Nenhum APK disponível.</div>`;
         }
     }
 
@@ -141,8 +169,7 @@
     }
 
     async function excluir(id, path) {
-        if (!isOwner) return;
-        if (!confirm("Confirmar exclusão definitiva?")) return;
+        if (!confirm("Remover APK da loja?")) return;
         await supabase.from('arquivos').delete().eq('id', id);
         await supabase.storage.from('apks').remove([path]);
         renderList();

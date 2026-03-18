@@ -32,6 +32,8 @@
             font-size: 14px; 
             display: inline-block;
             transition: 0.2s;
+            border: none;
+            cursor: pointer;
         }
         .btn-download:active { transform: scale(0.95); }
         
@@ -42,7 +44,6 @@
         .app-icon-mini { width: 45px; height: 45px; border-radius: 10px; object-fit: cover; margin-right: 12px; border: 1px solid #334155; cursor: zoom-in; }
         .app-info-box { display: flex; align-items: center; }
 
-        /* Estilo para Visualizar Imagem Real */
         #image-viewer { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2000; display: none; align-items: center; justify-content: center; cursor: zoom-out; }
         #image-viewer img { max-width: 90%; max-height: 80%; border-radius: 15px; border: 2px solid var(--primary); box-shadow: 0 0 30px rgba(0,255,136,0.3); }
     </style>
@@ -83,7 +84,7 @@
         <div id="upload-area" class="hidden">
             <input type="text" id="new-app-name" placeholder="Nome do App">
             <input type="text" id="new-app-icon" placeholder="URL da Foto do Ícone">
-            <input type="text" id="new-app-url" placeholder="Link do Google Drive ou Direto">
+            <input type="text" id="new-app-url" placeholder="Link Compartilhável do Google Drive">
             <button class="btn-main" onclick="salvarApp()">SALVAR NA NUVEM</button>
             <div id="upload-status" style="margin-top: 15px; text-align: center; color: var(--primary); font-weight: bold;"></div>
         </div>
@@ -97,25 +98,31 @@
     const SENHA_MESTRA = "Appnetrdgapi";
     let adminAcesso = false;
 
-    // Função para ver imagem em tamanho real
-    function verImagem(src) {
-        const viewer = document.getElementById('image-viewer');
-        const fullImg = document.getElementById('full-image');
-        fullImg.src = src;
-        viewer.style.display = 'flex';
+    // Função para forçar download e evitar que o App do Drive abra
+    function forcarDownload(url, filename) {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.target = "_blank"; // Abre em nova aba para forçar o download no navegador
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
     }
 
     function formatarLinkDrive(url) {
         if (url.includes("drive.google.com")) {
             let fileId = "";
-            if (url.includes("/d/")) {
-                fileId = url.split("/d/")[1].split("/")[0];
-            } else if (url.includes("id=")) {
-                fileId = url.split("id=")[1].split("&")[0];
-            }
-            if (fileId) {
-                return `https://drive.google.com/uc?export=download&id=${fileId}&confirm=t`;
-            }
+            try {
+                if (url.includes("/d/")) {
+                    fileId = url.split("/d/")[1].split("/")[0];
+                } else if (url.includes("id=")) {
+                    fileId = url.split("id=")[1].split("&")[0];
+                }
+                if (fileId) {
+                    // Link de exportação direta que costuma burlar a abertura do App
+                    return `https://drive.google.com/uc?export=download&id=${fileId}`;
+                }
+            } catch (e) { console.error("Erro ao formatar link", e); }
         }
         return url;
     }
@@ -145,14 +152,14 @@
                 container.innerHTML += `
                     <div class="app-card">
                         <div class="app-info-box">
-                            <img src="${foto}" class="app-icon-mini" onclick="verImagem('${foto}')" title="Clique para ampliar">
+                            <img src="${foto}" class="app-icon-mini" onclick="verImagem('${foto}')">
                             <div>
                                 <b style="font-size: 16px;">${app.name}</b><br>
-                                <small style="color: #888;">📦 APK Seguro</small>
+                                <small style="color: #888;">📦 APK Direto</small>
                             </div>
                         </div>
                         <div style="display:flex; align-items:center;">
-                            <a href="${app.url}" class="btn-download" download="${app.name}.apk">BAIXAR</a>
+                            <button onclick="forcarDownload('${app.url}', '${app.name}.apk')" class="btn-download">BAIXAR</button>
                             ${adminAcesso ? `<button onclick="deletarApp('${app.id}')" style="background:none; border:none; color:#ff4444; margin-left:10px; cursor:pointer;"><i class="fas fa-trash"></i></button>` : ''}
                         </div>
                     </div>`;
@@ -179,7 +186,7 @@
         const status = document.getElementById('upload-status');
 
         if(!name || !rawUrl) return alert("Preencha Nome e Link!");
-        status.innerText = "PROCESSANDO LINK...";
+        status.innerText = "CONVERTENDO LINK...";
 
         const finalUrl = formatarLinkDrive(rawUrl);
 
@@ -188,12 +195,9 @@
         }]);
 
         if(!error) {
-            status.innerText = "✅ SALVO COM SUCESSO!";
+            status.innerText = "✅ APK CADASTRADO!";
             fetchApps();
-            setTimeout(() => {
-                fecharPainel();
-                status.innerText = "";
-            }, 800);
+            setTimeout(() => { fecharPainel(); status.innerText = ""; }, 800);
         } else { alert("Erro ao salvar no Banco!"); }
     }
 

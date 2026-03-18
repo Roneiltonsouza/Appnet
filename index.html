@@ -14,14 +14,14 @@
         #login-screen { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 1000; flex-direction: column; }
         .login-box { background: var(--card); padding: 35px; border-radius: 20px; border: 1px solid var(--primary); text-align: center; width: 85%; max-width: 350px; box-shadow: 0 0 20px rgba(0,255,136,0.1); }
         
-        /* Botão Flutuante (Sempre Visível após login) */
+        /* Botão Flutuante */
         .admin-float-btn { position: fixed; bottom: 25px; right: 25px; background: var(--primary); color: #000; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; z-index: 99; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
         
         /* Layout Principal */
         .header { padding: 40px 20px; text-align: center; background: var(--card); border-bottom: 2px solid var(--primary); }
         .app-grid { padding: 20px; display: grid; gap: 15px; max-width: 600px; margin: 0 auto; }
         
-        /* Cards de Aplicativos */
+        /* Cards */
         .app-card { background: var(--card); padding: 18px; border-radius: 15px; border-left: 5px solid var(--primary); display: flex; flex-direction: column; }
         .card-top { display: flex; align-items: center; justify-content: space-between; width: 100%; }
         
@@ -40,7 +40,13 @@
         
         .hidden { display: none !important; }
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); padding: 20px; z-index: 1001; display: none; align-items: center; justify-content: center; }
-        .app-icon-mini { width: 50px; height: 50px; border-radius: 12px; object-fit: cover; margin-right: 15px; background: #222; }
+        
+        /* Visualizador de Imagem */
+        #img-viewer { z-index: 1002; flex-direction: column; }
+        .full-img { max-width: 90%; max-height: 80vh; border-radius: 15px; border: 2px solid var(--primary); box-shadow: 0 0 30px rgba(0,255,136,0.3); }
+
+        .app-icon-mini { width: 50px; height: 50px; border-radius: 12px; object-fit: cover; margin-right: 15px; background: #222; cursor: zoom-in; transition: 0.2s; }
+        .app-icon-mini:hover { transform: scale(1.05); }
     </style>
 </head>
 <body>
@@ -60,8 +66,7 @@
         <p id="welcome-msg" style="margin:0; opacity: 0.8; font-size: 14px;"></p>
     </div>
     
-    <div class="app-grid" id="app-list">
-        </div>
+    <div class="app-grid" id="app-list"></div>
 
     <button class="admin-float-btn" onclick="abrirPainel()">
         <i class="fas fa-tools"></i>
@@ -88,15 +93,19 @@
     </div>
 </div>
 
+<div id="img-viewer" class="modal" onclick="fecharImagem()">
+    <img id="img-full-res" class="full-img" src="">
+    <p style="color: var(--primary); margin-top: 15px; font-weight: bold;">Tamanho Original</p>
+    <small style="color: #ccc;">Clique fora para fechar</small>
+</div>
+
 <script>
-    // CONFIGURAÇÕES SUPABASE
     const SB_URL = "https://xahrzppgkcinpvwvednn.supabase.co";
     const SB_KEY = "sb_publishable_vRzozgRpPpBcDHduo9jYCQ_VE2onFyJ";
     const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
     const SENHA_MESTRA = "Appnetrdgapi";
     let adminAcesso = false;
 
-    // LOGIN SIMPLIFICADO (CONFORME SOLICITADO)
     function fazerLogin() {
         const nome = document.getElementById('user-name').value;
         if(nome.trim().length < 3) return alert("Por favor, digite seu nome completo.");
@@ -111,7 +120,18 @@
         listarApps();
     }
 
-    // LISTAR APPS COM ESTRUTURA PARA PROGRESSO
+    // Função para ver tamanho original
+    function verImagemOriginal(url) {
+        const viewer = document.getElementById('img-viewer');
+        const img = document.getElementById('img-full-res');
+        img.src = url;
+        viewer.style.display = 'flex';
+    }
+
+    function fecharImagem() {
+        document.getElementById('img-viewer').style.display = 'none';
+    }
+
     async function listarApps() {
         const { data, error } = await supabaseClient.from('apps').select('*').order('created_at', { ascending: false });
         const list = document.getElementById('app-list');
@@ -119,11 +139,15 @@
         
         if(data) {
             data.forEach((app, index) => {
+                const iconPath = app.icon_url || 'https://cdn-icons-png.flaticon.com/512/5738/5738031.png';
                 list.innerHTML += `
                 <div class="app-card">
                     <div class="card-top">
                         <div style="display:flex; align-items:center;">
-                            <img src="${app.icon_url || 'https://cdn-icons-png.flaticon.com/512/5738/5738031.png'}" class="app-icon-mini">
+                            <img src="${iconPath}" 
+                                 class="app-icon-mini" 
+                                 onclick="verImagemOriginal('${iconPath}')" 
+                                 title="Ver tamanho original">
                             <div>
                                 <b style="font-size: 16px;">${app.name}</b><br>
                                 <small style="color:var(--primary); font-size: 11px;"><i class="fas fa-check-circle"></i> Verificado</small>
@@ -143,7 +167,6 @@
         }
     }
 
-    // FUNÇÃO DE DOWNLOAD COM PORCENTAGEM REAL
     async function baixarArquivo(url, nomeApp, btn, idx) {
         const wrapper = document.getElementById(`wrapper-${idx}`);
         const bar = document.getElementById(`bar-${idx}`);
@@ -152,14 +175,11 @@
         try {
             btn.disabled = true;
             btn.innerText = "AGUARDE...";
-            
             const response = await fetch(url);
             if (!response.ok) throw new Error();
-
             const reader = response.body.getReader();
             const contentLength = +response.headers.get('Content-Length');
 
-            // Se o servidor não enviar o tamanho, faz download padrão
             if (!contentLength) {
                 window.open(url, '_blank');
                 btn.disabled = false;
@@ -176,7 +196,6 @@
                 if (done) break;
                 chunks.push(value);
                 receivedLength += value.length;
-                
                 let percent = Math.round((receivedLength / contentLength) * 100);
                 bar.style.width = percent + '%';
                 txt.innerText = percent + '% COMPLETO';
@@ -189,23 +208,19 @@
             a.download = nomeApp + ".apk";
             document.body.appendChild(a);
             a.click();
-            
             txt.innerText = "DOWNLOAD CONCLUÍDO!";
             setTimeout(() => { 
                 wrapper.style.display = 'none'; 
                 btn.disabled = false;
                 btn.innerText = "BAIXAR";
             }, 3000);
-
         } catch (e) {
-            alert("Erro no download direto. Tentando link externo...");
             window.open(url, '_blank');
             btn.disabled = false;
             btn.innerText = "BAIXAR";
         }
     }
 
-    // GERENCIAMENTO ADMIN
     function abrirPainel() { document.getElementById('admin-modal').style.display = 'flex'; }
     function fecharPainel() { document.getElementById('admin-modal').style.display = 'none'; }
 
@@ -223,33 +238,27 @@
         const icon = document.getElementById('new-app-icon').value;
         const link = document.getElementById('new-app-url').value;
         const status = document.getElementById('upload-status');
-
         if(!nome || !link) return alert("Preencha Nome e Link!");
-        
-        status.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Salvando no Cloud...";
-        
+        status.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Salvando...";
         const { error } = await supabaseClient.from('apps').insert([{ name: nome, icon_url: icon, url: link }]);
-
         if(!error) {
-            status.innerHTML = "<span style='color:var(--primary)'>✅ APK CADASTRADO COM SUCESSO!</span>";
+            status.innerHTML = "<span style='color:var(--primary)'>✅ CADASTRADO!</span>";
             listarApps();
             setTimeout(fecharPainel, 1500);
-        } else { alert("Erro ao conectar com Supabase."); }
+        }
     }
 
     async function remover(id) {
-        if(confirm("Deseja remover este APK permanentemente?")) {
+        if(confirm("Deseja remover este APK?")) {
             await supabaseClient.from('apps').delete().eq('id', id);
             listarApps();
         }
     }
 
-    // PERSISTÊNCIA DE LOGIN
     window.onload = () => {
         const user = localStorage.getItem('appnet_user_2026');
         if(user) carregarSistema(user);
     }
 </script>
-
 </body>
 </html>

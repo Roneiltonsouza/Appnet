@@ -21,7 +21,20 @@
         
         input { width: 100%; padding: 14px; margin: 10px 0; border-radius: 10px; border: 1px solid #334155; background: #0b0f1a; color: white; box-sizing: border-box; outline: none; }
         .btn-main { background: var(--primary); color: #000; border: none; padding: 14px; border-radius: 10px; font-weight: bold; cursor: pointer; width: 100%; }
-        .btn-download { background: var(--primary); color: #000; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px; border: none; cursor: pointer; }
+        
+        /* Estilo do botão de download como link */
+        .btn-download { 
+            background: var(--primary); 
+            color: #000; 
+            padding: 10px 20px; 
+            border-radius: 8px; 
+            text-decoration: none; 
+            font-weight: bold; 
+            font-size: 14px; 
+            display: inline-block;
+            transition: 0.2s;
+        }
+        .btn-download:active { transform: scale(0.95); }
         
         .hidden { display: none !important; }
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); padding: 20px; z-index: 1001; display: none; align-items: center; justify-content: center; }
@@ -76,6 +89,23 @@
     const SENHA_MESTRA = "Appnetrdgapi";
     let adminAcesso = false;
 
+    // --- FUNÇÃO PARA CONVERTER LINK DRIVE ---
+    function formatarLinkDrive(url) {
+        if (url.includes("drive.google.com")) {
+            let fileId = "";
+            if (url.includes("/d/")) {
+                fileId = url.split("/d/")[1].split("/")[0];
+            } else if (url.includes("id=")) {
+                fileId = url.split("id=")[1].split("&")[0];
+            }
+            if (fileId) {
+                // Link de download direto com bypass de confirmação para arquivos grandes
+                return `https://drive.google.com/uc?export=download&id=${fileId}&confirm=t`;
+            }
+        }
+        return url;
+    }
+
     function fazerLogin() {
         const nome = document.getElementById('user-name').value;
         if(nome.trim().length < 2) return alert("Digite seu nome!");
@@ -86,7 +116,7 @@
     function carregarSistema(nome) {
         document.getElementById('login-screen').classList.add('hidden');
         document.getElementById('main-content').classList.remove('hidden');
-        document.getElementById('welcome-msg').innerText = "Bem-vindo, " + nome.toUpperCase();
+        document.getElementById('welcome-msg').innerText = "BEM-VINDO, " + nome.toUpperCase();
         fetchApps();
     }
 
@@ -104,11 +134,11 @@
                             <img src="${foto}" class="app-icon-mini">
                             <div>
                                 <b style="font-size: 16px;">${app.name}</b><br>
-                                <small style="color: #888;">📦 Cloud Link</small>
+                                <small style="color: #888;">📦 APK Seguro</small>
                             </div>
                         </div>
                         <div style="display:flex; align-items:center;">
-                            <button class="btn-download" onclick="window.open('${app.url}', '_blank')">BAIXAR</button>
+                            <a href="${app.url}" class="btn-download" download="${app.name}.apk">BAIXAR</a>
                             ${adminAcesso ? `<button onclick="deletarApp('${app.id}')" style="background:none; border:none; color:#ff4444; margin-left:10px; cursor:pointer;"><i class="fas fa-trash"></i></button>` : ''}
                         </div>
                     </div>`;
@@ -131,21 +161,27 @@
     async function salvarApp() {
         const name = document.getElementById('new-app-name').value;
         const icon = document.getElementById('new-app-icon').value;
-        const url = document.getElementById('new-app-url').value;
+        const rawUrl = document.getElementById('new-app-url').value;
         const status = document.getElementById('upload-status');
 
-        if(!name || !url) return alert("Preencha Nome e Link!");
-        status.innerText = "SALVANDO...";
+        if(!name || !rawUrl) return alert("Preencha Nome e Link!");
+        status.innerText = "PROCESSANDO LINK...";
+
+        // Converte o link do Drive antes de salvar
+        const finalUrl = formatarLinkDrive(rawUrl);
 
         const { error } = await supabaseClient.from('apps').insert([{ 
-            name: name, icon_url: icon, url: url, size: "Link Direto" 
+            name: name, icon_url: icon, url: finalUrl, size: "Cloud" 
         }]);
 
         if(!error) {
-            status.innerText = "✅ SUCESSO!";
+            status.innerText = "✅ SALVO COM SUCESSO!";
             fetchApps();
-            setTimeout(fecharPainel, 800);
-        } else { alert("Erro ao salvar!"); }
+            setTimeout(() => {
+                fecharPainel();
+                status.innerText = "";
+            }, 800);
+        } else { alert("Erro ao salvar no Banco!"); }
     }
 
     async function deletarApp(id) {

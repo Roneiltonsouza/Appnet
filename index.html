@@ -106,6 +106,7 @@
     const SENHA_MESTRA = "Appnetrdgapi";
     let adminAcesso = false;
 
+    // Login e Persistência
     function fazerLogin() {
         const nome = document.getElementById('user-name').value;
         if(nome.trim().length < 3) return alert("Por favor, digite seu nome completo.");
@@ -120,7 +121,7 @@
         listarApps();
     }
 
-    // Função para ver tamanho original
+    // Zoom da Imagem
     function verImagemOriginal(url) {
         const viewer = document.getElementById('img-viewer');
         const img = document.getElementById('img-full-res');
@@ -132,6 +133,7 @@
         document.getElementById('img-viewer').style.display = 'none';
     }
 
+    // Listagem de Apps
     async function listarApps() {
         const { data, error } = await supabaseClient.from('apps').select('*').order('created_at', { ascending: false });
         const list = document.getElementById('app-list');
@@ -155,7 +157,7 @@
                         </div>
                         <div style="display:flex; align-items:center;">
                             <button onclick="baixarArquivo('${app.url}', '${app.name}', this, ${index})" class="btn-download">BAIXAR</button>
-                            ${adminAcesso ? `<button onclick="remover('${app.id}')" style="background:none; border:none; color:#ff4444; margin-left:10px;"><i class="fas fa-trash"></i></button>` : ''}
+                            ${adminAcesso ? `<button onclick="remover('${app.id}')" style="background:none; border:none; color:#ff4444; margin-left:10px; cursor:pointer;"><i class="fas fa-trash"></i></button>` : ''}
                         </div>
                     </div>
                     <div class="progress-wrapper" id="wrapper-${index}">
@@ -167,6 +169,7 @@
         }
     }
 
+    // Download com Progresso
     async function baixarArquivo(url, nomeApp, btn, idx) {
         const wrapper = document.getElementById(`wrapper-${idx}`);
         const bar = document.getElementById(`bar-${idx}`);
@@ -221,6 +224,7 @@
         }
     }
 
+    // Gerenciamento Admin
     function abrirPainel() { document.getElementById('admin-modal').style.display = 'flex'; }
     function fecharPainel() { document.getElementById('admin-modal').style.display = 'none'; }
 
@@ -248,10 +252,22 @@
         }
     }
 
+    // Função de Excluir com Senha de Segurança
     async function remover(id) {
-        if(confirm("Deseja remover este APK?")) {
-            await supabaseClient.from('apps').delete().eq('id', id);
-            listarApps();
+        if(confirm("Deseja remover este APK permanentemente?")) {
+            const confirmacaoSenha = prompt("Digite a Senha Administrativa (Appnetrdgapi) para confirmar:");
+            
+            if(confirmacaoSenha === SENHA_MESTRA) {
+                const { error } = await supabaseClient.from('apps').delete().eq('id', id);
+                if(!error) {
+                    alert("Removido com sucesso!");
+                    listarApps();
+                } else {
+                    alert("Erro ao conectar com o banco.");
+                }
+            } else {
+                alert("Senha incorreta! Operação cancelada.");
+            }
         }
     }
 

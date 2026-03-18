@@ -22,7 +22,6 @@
         input { width: 100%; padding: 14px; margin: 10px 0; border-radius: 10px; border: 1px solid #334155; background: #0b0f1a; color: white; box-sizing: border-box; outline: none; }
         .btn-main { background: var(--primary); color: #000; border: none; padding: 14px; border-radius: 10px; font-weight: bold; cursor: pointer; width: 100%; }
         
-        /* Estilo do botão de download como link */
         .btn-download { 
             background: var(--primary); 
             color: #000; 
@@ -38,13 +37,22 @@
         
         .hidden { display: none !important; }
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); padding: 20px; z-index: 1001; display: none; align-items: center; justify-content: center; }
-        .close-modal { position: absolute; right: 20px; top: 15px; color: var(--primary); font-size: 30px; cursor: pointer; }
+        .close-modal { position: absolute; right: 20px; top: 15px; color: var(--primary); font-size: 30px; cursor: pointer; z-index: 10; }
 
-        .app-icon-mini { width: 45px; height: 45px; border-radius: 10px; object-fit: cover; margin-right: 12px; border: 1px solid #334155; }
+        .app-icon-mini { width: 45px; height: 45px; border-radius: 10px; object-fit: cover; margin-right: 12px; border: 1px solid #334155; cursor: zoom-in; }
         .app-info-box { display: flex; align-items: center; }
+
+        /* Estilo para Visualizar Imagem Real */
+        #image-viewer { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2000; display: none; align-items: center; justify-content: center; cursor: zoom-out; }
+        #image-viewer img { max-width: 90%; max-height: 80%; border-radius: 15px; border: 2px solid var(--primary); box-shadow: 0 0 30px rgba(0,255,136,0.3); }
     </style>
 </head>
 <body>
+
+<div id="image-viewer" onclick="this.style.display='none'">
+    <span class="close-modal">&times;</span>
+    <img src="" id="full-image">
+</div>
 
 <div id="login-screen">
     <div class="login-box">
@@ -89,7 +97,14 @@
     const SENHA_MESTRA = "Appnetrdgapi";
     let adminAcesso = false;
 
-    // --- FUNÇÃO PARA CONVERTER LINK DRIVE ---
+    // Função para ver imagem em tamanho real
+    function verImagem(src) {
+        const viewer = document.getElementById('image-viewer');
+        const fullImg = document.getElementById('full-image');
+        fullImg.src = src;
+        viewer.style.display = 'flex';
+    }
+
     function formatarLinkDrive(url) {
         if (url.includes("drive.google.com")) {
             let fileId = "";
@@ -99,7 +114,6 @@
                 fileId = url.split("id=")[1].split("&")[0];
             }
             if (fileId) {
-                // Link de download direto com bypass de confirmação para arquivos grandes
                 return `https://drive.google.com/uc?export=download&id=${fileId}&confirm=t`;
             }
         }
@@ -131,7 +145,7 @@
                 container.innerHTML += `
                     <div class="app-card">
                         <div class="app-info-box">
-                            <img src="${foto}" class="app-icon-mini">
+                            <img src="${foto}" class="app-icon-mini" onclick="verImagem('${foto}')" title="Clique para ampliar">
                             <div>
                                 <b style="font-size: 16px;">${app.name}</b><br>
                                 <small style="color: #888;">📦 APK Seguro</small>
@@ -167,7 +181,6 @@
         if(!name || !rawUrl) return alert("Preencha Nome e Link!");
         status.innerText = "PROCESSANDO LINK...";
 
-        // Converte o link do Drive antes de salvar
         const finalUrl = formatarLinkDrive(rawUrl);
 
         const { error } = await supabaseClient.from('apps').insert([{ 
